@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { rtdb } from '../firebase';
 import { ref, onValue, set, remove } from 'firebase/database';
 
 export default function TeacherLive() {
   const navigate = useNavigate();
+  const { pin } = useParams();
   const [students, setStudents] = useState([]);
+  const [activityTitle, setActivityTitle] = useState('Cargando...');
 
   useEffect(() => {
-    // 1. Initialize session state when teacher opens live view
-    const stateRef = ref(rtdb, 'session/state');
-    set(stateRef, { status: 'waiting', currentQuestion: 1 });
+    if (!pin) return;
 
-    // 2. Listen for students joining
-    const studentsRef = ref(rtdb, 'session/students');
-    const unsubscribe = onValue(studentsRef, (snapshot) => {
+    // Listen to session state to get activity title
+    const stateRef = ref(rtdb, `sessions/${pin}/state`);
+    const unsubscribeState = onValue(stateRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const state = snapshot.val();
+        if (state.activityTitle) {
+          setActivityTitle(state.activityTitle);
+        }
+      }
+    });
+
+    // Listen for students joining
+    const studentsRef = ref(rtdb, `sessions/${pin}/students`);
+    const unsubscribeStudents = onValue(studentsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         // Convert object to array and filter out kicked ones if needed
@@ -28,13 +39,16 @@ export default function TeacherLive() {
       }
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      unsubscribeState();
+      unsubscribeStudents();
+    };
+  }, [pin]);
 
   const handleKickStudent = async (studentId) => {
     try {
       // Instead of deleting, we change status to 'kicked' so their app knows
-      await set(ref(rtdb, `session/students/${studentId}/status`), 'kicked');
+      await set(ref(rtdb, `sessions/${pin}/students/${studentId}/status`), 'kicked');
     } catch (e) {
       console.error("Error kicking student:", e);
     }
@@ -42,19 +56,15 @@ export default function TeacherLive() {
 
   const handleStartQuiz = async () => {
     try {
-      await set(ref(rtdb, 'session/state'), { status: 'quiz', startedAt: Date.now() });
-      navigate('/results'); // For now, we jump straight to results to watch it live
+      await set(ref(rtdb, `sessions/${pin}/state/status`), 'quiz');
+      await set(ref(rtdb, `sessions/${pin}/state/startedAt`), Date.now());
+      navigate(`/results/${pin}`); // For now, we jump straight to results to watch it live
     } catch (e) {
       console.error("Error starting quiz:", e);
     }
   };
 
-  const getShapeClasses = (shape, colorId) => {
-    const shapeClass = shape === 'circle' ? 'rounded-full' : shape === 'square' ? 'rounded-lg' : 'rounded-none';
-    const bgClass = `bg-${colorId}-200`;
-    const borderClass = `border-${colorId}-400`;
-    return `${shapeClass} ${bgClass} ${borderClass}`;
-  };
+  const joinUrl = `${window.location.origin}/?pin=${pin}`;
 
   return (
     <div className="bg-surface text-on-surface h-screen flex flex-col font-body-md overflow-hidden">
@@ -80,14 +90,16 @@ export default function TeacherLive() {
           
           {/* Left Side: QR Code & Pin */}
           <section className="lg:w-5/12 bg-surface-container-low p-margin-desktop flex flex-col items-center justify-center border-r border-outline-variant relative">
-            <div className="text-center mb-8">
-              <h2 className="text-headline-xl font-headline-xl text-primary mb-2">Únete a la clase</h2>
-              <p className="text-body-md font-body-md text-on-surface-variant">Escanea el código QR o entra desde tu app</p>
+            <div className="text-center mb-6 w-full">
+              <h2 className="text-headline-sm font-headline-sm text-on-surface-variant mb-2">PIN DEL JUEGO</h2>
+              <div className="bg-white rounded-3xl py-4 px-8 shadow-md border-4 border-primary inline-block mb-4">
+                <span className="text-[4rem] font-black tracking-widest text-primary leading-none">{pin}</span>
+              </div>
+              <p className="text-body-lg font-body-lg text-on-surface-variant font-bold">{activityTitle}</p>
             </div>
             
-            <div className="bg-surface-container-lowest p-card-padding rounded-xl card-shadow border-2 border-primary mb-8 w-64 h-64 flex items-center justify-center">
-              {/* Dummy QR code generation based on current URL just for visual purposes */}
-              <img className="w-full h-full object-contain" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=Smart-Colpres_Local" alt="QR Code" />
+            <div className="bg-surface-container-lowest p-card-padding rounded-xl card-shadow border-2 border-primary mb-8 w-48 h-48 flex items-center justify-center shrink-0">
+              <img className="w-full h-full object-contain" src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(joinUrl)}`} alt="QR Code" />
             </div>
             
             <button 
@@ -108,7 +120,7 @@ export default function TeacherLive() {
               </h2>
               <button onClick={() => navigate('/teacher')} className="bg-surface-container-highest text-on-surface hover:bg-surface-container transition-colors px-4 py-2 rounded-lg font-label-lg text-label-lg flex items-center gap-2 card-shadow">
                 <span className="material-symbols-outlined">close</span>
-                Cerrar Sesión
+                Volver al Panel
               </button>
             </div>
             

@@ -13,7 +13,8 @@ export default function StudentQuiz() {
 
   useEffect(() => {
     const id = localStorage.getItem('studentId');
-    if (!id) {
+    const pin = localStorage.getItem('gamePin');
+    if (!id || !pin) {
       navigate('/');
       return;
     }
@@ -23,7 +24,7 @@ export default function StudentQuiz() {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // They left the tab! Flag them as cheating
-        update(ref(rtdb, `session/students/${id}`), {
+        update(ref(rtdb, `sessions/${pin}/students/${id}`), {
           cheated: true
         }).catch(err => console.error("Error setting cheat flag", err));
       }
@@ -31,13 +32,13 @@ export default function StudentQuiz() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // 2. Synchronize Timer with Teacher's Start Time
-    const stateRef = ref(rtdb, `session/state`);
+    const stateRef = ref(rtdb, `sessions/${pin}/state`);
     const unsubscribe = onValue(stateRef, (snapshot) => {
       const state = snapshot.val();
       if (state) {
         if (state.status === 'results') {
            // Teacher ended quiz early
-           navigate('/results');
+           navigate(`/results/${pin}`);
         } else if (state.status === 'quiz' && state.startedAt) {
            // Calculate time left based on server/start time
            const elapsedSeconds = Math.floor((Date.now() - state.startedAt) / 1000);
@@ -53,7 +54,7 @@ export default function StudentQuiz() {
         if (prev <= 1) {
           clearInterval(timer);
           // Time's up! Wait 1 second then go to results
-          setTimeout(() => navigate('/results'), 1000);
+          setTimeout(() => navigate(`/results/${pin}`), 1000);
           return 0;
         }
         return prev - 1;
@@ -73,8 +74,9 @@ export default function StudentQuiz() {
     setSelectedOption(option);
     
     // Save to Firebase immediately
-    if (studentId) {
-      update(ref(rtdb, `session/students/${studentId}`), {
+    const pin = localStorage.getItem('gamePin');
+    if (studentId && pin) {
+      update(ref(rtdb, `sessions/${pin}/students/${studentId}`), {
         answer: option,
         answeredAt: Date.now() // to calculate how fast they answered
       }).catch(err => console.error("Error saving answer", err));

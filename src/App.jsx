@@ -18,10 +18,10 @@ function App() {
         
         {/* Teacher Routes */}
         <Route path="/teacher" element={<TeacherDashboard />} />
-        <Route path="/teacher/live" element={<TeacherLive />} />
+        <Route path="/teacher/live/:pin" element={<TeacherLive />} />
         
         {/* Shared Routes */}
-        <Route path="/results" element={<Results />} />
+        <Route path="/results/:pin" element={<Results />} />
       </Routes>
     </Router>
   )

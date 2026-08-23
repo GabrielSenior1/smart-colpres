@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { rtdb } from '../firebase';
-import { ref, onValue, set, remove } from 'firebase/database';
+import { ref, onValue, remove } from 'firebase/database';
 
 export default function StudentWaitingRoom() {
   const [isExpelled, setIsExpelled] = useState(false);
@@ -10,13 +10,15 @@ export default function StudentWaitingRoom() {
 
   useEffect(() => {
     const studentId = localStorage.getItem('studentId');
-    if (!studentId) {
+    const pin = localStorage.getItem('gamePin');
+    
+    if (!studentId || !pin) {
       navigate('/');
       return;
     }
 
-    // Listen to my own student node
-    const studentRef = ref(rtdb, `session/students/${studentId}`);
+    // Listen to my own student node inside the specific session
+    const studentRef = ref(rtdb, `sessions/${pin}/students/${studentId}`);
     const unsubscribeStudent = onValue(studentRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
@@ -30,8 +32,8 @@ export default function StudentWaitingRoom() {
       }
     });
 
-    // Listen to global session state
-    const stateRef = ref(rtdb, `session/state`);
+    // Listen to specific session state
+    const stateRef = ref(rtdb, `sessions/${pin}/state`);
     const unsubscribeState = onValue(stateRef, (snapshot) => {
       const state = snapshot.val();
       if (state && state.status === 'quiz') {
@@ -47,25 +49,19 @@ export default function StudentWaitingRoom() {
 
   const handleReenterInfo = async () => {
     const studentId = localStorage.getItem('studentId');
-    if (studentId) {
+    const pin = localStorage.getItem('gamePin');
+    
+    if (studentId && pin) {
       // Clean up the node if it still exists before leaving
       try {
-        await remove(ref(rtdb, `session/students/${studentId}`));
+        await remove(ref(rtdb, `sessions/${pin}/students/${studentId}`));
       } catch (e) {
         console.error("Cleanup error", e);
       }
       localStorage.removeItem('studentId');
+      localStorage.removeItem('gamePin');
     }
     navigate('/');
-  };
-
-  const getShapeClasses = (shape, colorId) => {
-    const shapeClass = shape === 'circle' ? 'rounded-full' : shape === 'square' ? 'rounded-lg' : 'rounded-none';
-    const bgClass = `bg-${colorId}-200`;
-    const borderClass = `border-${colorId}-400`;
-    // We provide a fallback if the dynamic class tailwind compilation fails, 
-    // but in a real app we'd map this safely. For now, our colors are standard tailwind.
-    return `${shapeClass} ${bgClass} ${borderClass}`;
   };
 
   return (

@@ -1,46 +1,62 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { rtdb } from '../firebase';
-import { ref, set } from 'firebase/database';
+import { ref, set, get } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid'; // we need to install uuid
 
 export default function StudentLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  const [pin, setPin] = useState(searchParams.get('pin') || '');
   const [name, setName] = useState('');
   const [course, setCourse] = useState('');
   const [avatarId, setAvatarId] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Generamos un arreglo con los IDs de los 6 avatares generados
   const avatars = Array.from({ length: 6 }, (_, i) => i + 1);
 
   const handleJoin = async (e) => {
     e.preventDefault();
-    if (!name || !course) return;
+    if (!name || !course || !pin) return;
     
     setLoading(true);
+    setError('');
     
     try {
-      // 1. Generate unique ID for this student session
+      // 1. Verify that the PIN exists in active sessions
+      const sessionRef = ref(rtdb, `sessions/${pin}/state`);
+      const snapshot = await get(sessionRef);
+      
+      if (!snapshot.exists()) {
+        setError("El PIN no es válido o la sesión ya ha terminado.");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Generate unique ID for this student session
       const studentId = uuidv4();
       
-      // 2. Save student data to Realtime Database
-      await set(ref(rtdb, `session/students/${studentId}`), {
+      // 3. Save student data to Realtime Database inside the specific session
+      await set(ref(rtdb, `sessions/${pin}/students/${studentId}`), {
         name,
         course,
-        avatar: avatarId, // Ahora guardamos el ID del PNG directamente
+        avatar: avatarId,
         status: 'waiting',
         joinedAt: Date.now()
       });
       
-      // 3. Save student ID to local storage so they don't lose session on refresh
+      // 4. Save student ID and PIN to local storage so they don't lose session on refresh
       localStorage.setItem('studentId', studentId);
+      localStorage.setItem('gamePin', pin);
       
-      // 4. Navigate to waiting room
+      // 5. Navigate to waiting room
       navigate('/waiting-room');
     } catch (error) {
       console.error("Error joining session:", error);
-      alert("Hubo un error al unirse a la sesión. Intenta de nuevo.");
+      setError("Hubo un error al unirse a la sesión. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -67,6 +83,27 @@ export default function StudentLogin() {
           <div className="space-y-4">
             <h2 className="text-headline-lg-mobile font-headline-lg-mobile text-primary font-bold">Únete a la Clase</h2>
             
+            {error && (
+              <div className="bg-error-container/80 backdrop-blur-sm text-on-error-container p-3 rounded-xl text-sm font-bold border border-error/20 flex items-center gap-2">
+                <span className="material-symbols-outlined shrink-0">error</span>
+                <p>{error}</p>
+              </div>
+            )}
+            
+            <div className="space-y-1">
+              <label htmlFor="gamePin" className="font-label-lg text-label-lg text-on-surface-variant ml-2">PIN del Juego</label>
+              <input 
+                type="text" 
+                id="gamePin" 
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="Ej. 845192" 
+                className="w-full bg-surface-container-low border-2 border-outline-variant rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-fixed transition-all placeholder:text-outline-variant/60 font-black text-on-surface text-center tracking-widest text-2xl"
+                required 
+                maxLength={6}
+              />
+            </div>
+
             <div className="space-y-1">
               <label htmlFor="studentName" className="font-label-lg text-label-lg text-on-surface-variant ml-2">Nombre</label>
               <input 

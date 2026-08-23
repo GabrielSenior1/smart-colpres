@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { rtdb } from '../firebase';
 import { ref, onValue } from 'firebase/database';
 
 export default function Results() {
   const navigate = useNavigate();
+  const { pin } = useParams();
   const [confetti, setConfetti] = useState([]);
   const [students, setStudents] = useState([]);
 
@@ -22,8 +23,10 @@ export default function Results() {
     
     const t = setTimeout(() => setConfetti([]), 5000);
 
-    // Read real-time students data
-    const studentsRef = ref(rtdb, 'session/students');
+    if (!pin) return;
+
+    // Read real-time students data from specific session
+    const studentsRef = ref(rtdb, `sessions/${pin}/students`);
     const unsubscribe = onValue(studentsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -38,6 +41,8 @@ export default function Results() {
           .sort((a, b) => b.score - a.score); // Sort by highest score
         
         setStudents(studentList);
+      } else {
+        setStudents([]);
       }
     });
 
@@ -45,7 +50,7 @@ export default function Results() {
       clearTimeout(t);
       unsubscribe();
     };
-  }, []);
+  }, [pin]);
 
   const getShapeClasses = (shape, colorId) => {
     const shapeClass = shape === 'circle' ? 'rounded-full' : shape === 'square' ? 'rounded-lg' : 'rounded-none';

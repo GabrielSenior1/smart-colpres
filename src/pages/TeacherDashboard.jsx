@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, googleProvider, rtdb } from '../firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 
 // Define the two allowed teacher emails here
 const ALLOWED_EMAILS = ['gabriel.senior.daza@gmail.com', 'rovimartinez@gmail.com'];
+
+// Actividades de prueba
+const ACTIVITIES = [
+  { id: 'activity_1', title: 'Intro to Biology', subject: 'Grade 6 Science', qs: 12 },
+  { id: 'activity_2', title: 'El Sistema Solar', subject: 'Ciencias Naturales - 8vo', qs: 10 }
+];
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
@@ -15,7 +21,7 @@ export default function TeacherDashboard() {
   
   // Real-time states
   const [activeStudents, setActiveStudents] = useState(0);
-  const [quizzesPlayed, setQuizzesPlayed] = useState(0);
+  const [activeSessions, setActiveSessions] = useState({}); // { pin: { state, students } }
   
   // Navigation state
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'activeGames', 'classes'
@@ -26,33 +32,30 @@ export default function TeacherDashboard() {
       setLoadingAuth(false);
     });
     
-    // Listen to real-time active students
-    const studentsRef = ref(rtdb, 'session/students');
-    const unsubscribeStudents = onValue(studentsRef, (snapshot) => {
+    // Listen to all sessions
+    const sessionsRef = ref(rtdb, 'sessions');
+    const unsubscribeSessions = onValue(sessionsRef, (snapshot) => {
       if (snapshot.exists()) {
-        // Contamos la cantidad de estudiantes que NO están 'kicked'
-        const students = snapshot.val();
-        const activeCount = Object.values(students).filter(s => s.status !== 'kicked').length;
-        setActiveStudents(activeCount);
+        const sessionsData = snapshot.val();
+        setActiveSessions(sessionsData);
+        
+        // Calcular total de estudiantes activos sumando en todas las sesiones
+        let totalActiveStudents = 0;
+        Object.values(sessionsData).forEach(session => {
+          if (session.students) {
+            totalActiveStudents += Object.values(session.students).filter(s => s.status !== 'kicked').length;
+          }
+        });
+        setActiveStudents(totalActiveStudents);
       } else {
+        setActiveSessions({});
         setActiveStudents(0);
-      }
-    });
-
-    // Listen to global quizzes played (for now we listen to a mock node 'stats/quizzesPlayed')
-    const statsRef = ref(rtdb, 'stats/quizzesPlayed');
-    const unsubscribeStats = onValue(statsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setQuizzesPlayed(snapshot.val());
-      } else {
-        setQuizzesPlayed(0);
       }
     });
 
     return () => {
       unsubscribeAuth();
-      unsubscribeStudents();
-      unsubscribeStats();
+      unsubscribeSessions();
     };
   }, []);
 
@@ -76,6 +79,36 @@ export default function TeacherDashboard() {
   const handleLogout = async () => {
     await signOut(auth);
     navigate('/');
+  };
+
+  const generatePin = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit PIN
+  };
+
+  const handleHostActivity = async (activity) => {
+    // Buscar si ya hay una sesión activa para esta actividad
+    const existingSessionEntry = Object.entries(activeSessions).find(
+      ([pin, session]) => session.state && session.state.activityId === activity.id
+    );
+
+    if (existingSessionEntry) {
+      // Reanudar la sesión existente
+      const [pin] = existingSessionEntry;
+      navigate(`/teacher/live/${pin}`);
+    } else {
+      // Crear nueva sesión con PIN
+      let newPin = generatePin();
+      
+      const newSessionRef = ref(rtdb, `sessions/${newPin}/state`);
+      await set(newSessionRef, {
+        activityId: activity.id,
+        activityTitle: activity.title,
+        status: 'waiting',
+        createdAt: Date.now()
+      });
+      
+      navigate(`/teacher/live/${newPin}`);
+    }
   };
 
   if (loadingAuth) {
@@ -181,13 +214,12 @@ export default function TeacherDashboard() {
                 <span>Classes</span>
               </a>
             </li>
-            {/* Reportes removido según requerimiento */}
           </ul>
         </div>
         <div className="p-6 border-t border-outline-variant/30 flex flex-col gap-3">
-          <button onClick={() => navigate('/teacher/live')} className="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
+          <button onClick={() => setActiveTab('dashboard')} className="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
             <span className="material-symbols-outlined">add</span>
-            Start New Quiz
+            New Activity
           </button>
           <button onClick={handleLogout} className="w-full bg-surface-container text-error py-2 rounded-lg text-sm font-bold hover:bg-error-container transition-colors">
             Logout
@@ -205,12 +237,6 @@ export default function TeacherDashboard() {
                 <h1 className="text-headline-xl font-headline-xl text-primary mb-2">Welcome Back, {user.displayName?.split(' ')[0]}!</h1>
                 <p className="text-on-surface-variant text-body-md font-body-md">Ready to engage your students today?</p>
               </div>
-              <div className="flex gap-4 w-full md:w-auto">
-                <button onClick={() => navigate('/teacher/live')} className="flex-1 md:flex-none bg-secondary-container text-on-secondary-container py-3 px-6 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
-                  <span className="material-symbols-outlined">rocket_launch</span>
-                  Launch Live
-                </button>
-              </div>
             </section>
 
             {/* Quick Stats Bento */}
@@ -226,11 +252,11 @@ export default function TeacherDashboard() {
               </div>
               <div className="bg-surface-container-lowest p-card-padding rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-primary/20 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-on-surface-variant mb-1 font-bold uppercase tracking-wider">Quizzes Played</p>
-                  <p className="text-headline-lg font-headline-lg text-primary">{quizzesPlayed}</p>
+                  <p className="text-sm text-on-surface-variant mb-1 font-bold uppercase tracking-wider">Active Hosted Games</p>
+                  <p className="text-headline-lg font-headline-lg text-primary">{Object.keys(activeSessions).length}</p>
                 </div>
                 <div className="bg-secondary-fixed text-on-secondary-fixed p-3 rounded-full">
-                  <span className="material-symbols-outlined text-3xl fill">quiz</span>
+                  <span className="material-symbols-outlined text-3xl fill">play_circle</span>
                 </div>
               </div>
             </section>
@@ -242,34 +268,71 @@ export default function TeacherDashboard() {
                 <a onClick={() => setActiveTab('classes')} className="text-primary font-label-lg text-label-lg hover:underline flex items-center gap-1 cursor-pointer">View All <span className="material-symbols-outlined">arrow_forward</span></a>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-game-gap">
-                {/* Card 1 */}
-                <div className="bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-outline-variant/30 overflow-hidden group hover:shadow-lg transition-shadow">
-                  <div className="h-32 bg-primary-fixed-dim relative flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                    <span className="absolute bottom-2 right-2 bg-background text-on-background text-xs px-2 py-1 rounded-full font-bold">12 Qs</span>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-label-lg font-label-lg text-on-surface mb-1 line-clamp-1">Intro to Biology</h3>
-                    <p className="text-sm text-on-surface-variant mb-4">Grade 6 Science</p>
-                    <div className="flex gap-2">
-                      <button className="flex-1 bg-surface-container text-on-surface py-2 rounded-lg text-sm font-bold hover:bg-surface-container-highest transition-colors">Edit</button>
-                      <button onClick={() => navigate('/teacher/live')} className="flex-1 bg-primary text-on-primary py-2 rounded-lg text-sm font-bold btn-3d">Host</button>
+                {ACTIVITIES.map((activity) => {
+                  const isHosting = Object.values(activeSessions).some(
+                    session => session.state && session.state.activityId === activity.id
+                  );
+
+                  return (
+                    <div key={activity.id} className={`bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border ${isHosting ? 'border-primary border-2' : 'border-outline-variant/30'} overflow-hidden group hover:shadow-lg transition-all`}>
+                      <div className="h-32 bg-primary-fixed-dim relative flex items-center justify-center overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        <span className="absolute bottom-2 right-2 bg-background text-on-background text-xs px-2 py-1 rounded-full font-bold">{activity.qs} Qs</span>
+                        {isHosting && (
+                          <span className="absolute top-2 left-2 bg-primary text-on-primary text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                            Live Now
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <h3 className="text-label-lg font-label-lg text-on-surface mb-1 line-clamp-1">{activity.title}</h3>
+                        <p className="text-sm text-on-surface-variant mb-4">{activity.subject}</p>
+                        <div className="flex gap-2">
+                          <button className="flex-1 bg-surface-container text-on-surface py-2 rounded-lg text-sm font-bold hover:bg-surface-container-highest transition-colors">Edit</button>
+                          
+                          <button 
+                            onClick={() => handleHostActivity(activity)} 
+                            className={`flex-1 py-2 rounded-lg text-sm font-bold btn-3d text-white transition-colors ${
+                              isHosting ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'
+                            }`}
+                          >
+                            {isHosting ? 'Resume Host' : 'Host'}
+                          </button>
+                          
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             </section>
           </>
         )}
 
         {activeTab === 'activeGames' && (
-          <section className="flex flex-col items-center justify-center h-full text-center p-8">
-            <span className="material-symbols-outlined text-6xl text-primary/30 mb-4">play_circle</span>
-            <h2 className="text-headline-md font-headline-md text-primary mb-2">Active Games</h2>
-            <p className="text-on-surface-variant">Here you can monitor all currently running quiz sessions.</p>
-            <button onClick={() => navigate('/teacher/live')} className="mt-6 bg-primary text-on-primary py-3 px-6 rounded-lg font-label-lg btn-3d">
-              Ir a la Sesión Actual
-            </button>
+          <section className="flex flex-col h-full p-2">
+            <h2 className="text-headline-md font-headline-md text-primary mb-6">Active Games</h2>
+            {Object.keys(activeSessions).length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <span className="material-symbols-outlined text-6xl text-primary/30 mb-4">play_circle</span>
+                <p className="text-on-surface-variant">No active games right now.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(activeSessions).map(([pin, session]) => (
+                  <div key={pin} className="bg-surface-container-lowest p-4 rounded-xl shadow border border-outline-variant flex justify-between items-center">
+                    <div>
+                      <h3 className="font-bold text-primary">{session.state?.activityTitle || 'Quiz Session'}</h3>
+                      <p className="text-sm text-on-surface-variant">PIN: {pin}</p>
+                    </div>
+                    <button onClick={() => navigate(`/teacher/live/${pin}`)} className="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-bold btn-3d">
+                      Join
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
