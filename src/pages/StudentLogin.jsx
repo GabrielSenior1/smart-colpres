@@ -96,8 +96,8 @@ export default function StudentLogin() {
             
             {/* Live Preview */}
             <div className="flex justify-center mb-6">
-              <div className="w-28 h-28 border-4 border-primary rounded-full shadow-lg flex items-center justify-center overflow-hidden bg-white">
-                <img src={`/avatares/${avatarId}.png`} alt="Avatar Preview" className="w-full h-full object-cover" />
+              <div className="w-32 h-32 border-4 border-primary rounded-full shadow-lg flex items-center justify-center overflow-hidden bg-surface-container-lowest">
+                <img src={`/avatares/${avatarId}.png`} alt="Avatar Preview" className="w-full h-full object-contain p-2 drop-shadow-md hover:scale-105 transition-transform" />
               </div>
             </div>
 
@@ -108,9 +108,9 @@ export default function StudentLogin() {
                   key={id}
                   type="button" 
                   onClick={() => setAvatarId(id)}
-                  className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${avatarId === id ? 'border-primary ring-2 ring-primary-fixed scale-110 shadow-md' : 'border-outline-variant opacity-70 hover:opacity-100 hover:scale-105'}`}
+                  className={`w-16 h-16 rounded-full overflow-hidden border-2 transition-all p-1 flex items-center justify-center bg-surface-container-lowest ${avatarId === id ? 'border-primary ring-4 ring-primary-fixed scale-110 shadow-lg' : 'border-outline-variant opacity-70 hover:opacity-100 hover:scale-105'}`}
                 >
-                  <img src={`/avatares/${id}.png`} alt={`Avatar ${id}`} className="w-full h-full object-cover bg-white" />
+                  <img src={`/avatares/${id}.png`} alt={`Avatar ${id}`} className="w-full h-full object-contain drop-shadow-sm" />
                 </button>
               ))}
             </div>

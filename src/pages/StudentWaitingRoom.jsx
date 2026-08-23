@@ -97,9 +97,9 @@ export default function StudentWaitingRoom() {
           <div className="absolute w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-primary-fixed-dim opacity-50 animate-pulse-ring"></div>
           <div className="absolute w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-primary-fixed opacity-30 animate-pulse-ring" style={{ animationDelay: '0.5s' }}></div>
           
-          <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center z-10 bg-white border-primary">
+          <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center z-10 bg-surface-container-lowest border-primary p-2">
             {studentData?.avatar ? (
-              <img src={`/avatares/${studentData.avatar}.png`} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={`/avatares/${studentData.avatar}.png`} alt="Avatar" className="w-full h-full object-contain drop-shadow-md" />
             ) : (
               <div className="w-full h-full bg-surface-container-low flex items-center justify-center">
                 <span className="material-symbols-outlined text-4xl text-outline">person</span>
