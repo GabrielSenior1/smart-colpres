@@ -99,7 +99,7 @@ export default function StudentWaitingRoom() {
           
           <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center z-10 bg-surface-container-lowest border-primary p-2">
             {studentData?.avatar ? (
-              <img src={`/avatares/${studentData.avatar}.png`} alt="Avatar" className="w-full h-full object-contain drop-shadow-md" />
+              <img src={`/avatares/${studentData.avatar}.jpg`} alt="Avatar" className="w-full h-full object-contain drop-shadow-md" />
             ) : (
               <div className="w-full h-full bg-surface-container-low flex items-center justify-center">
                 <span className="material-symbols-outlined text-4xl text-outline">person</span>

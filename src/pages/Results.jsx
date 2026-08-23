@@ -122,7 +122,7 @@ export default function Results() {
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 border-2 border-primary rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-surface-container-lowest p-1">
-                                <img src={`/avatares/${student.avatar}.png`} alt="Avatar" className="w-full h-full object-contain drop-shadow-sm" />
+                                <img src={`/avatares/${student.avatar}.jpg`} alt="Avatar" className="w-full h-full object-contain drop-shadow-sm" />
                               </div>
                               <span className="font-bold">{student.name}</span>
                             </div>

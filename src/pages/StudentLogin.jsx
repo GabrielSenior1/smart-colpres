@@ -11,8 +11,8 @@ export default function StudentLogin() {
   const [avatarId, setAvatarId] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Generamos un arreglo con los IDs de los 13 avatares
-  const avatars = Array.from({ length: 13 }, (_, i) => i + 1);
+  // Generamos un arreglo con los IDs de los 6 avatares generados
+  const avatars = Array.from({ length: 6 }, (_, i) => i + 1);
 
   const handleJoin = async (e) => {
     e.preventDefault();
@@ -97,12 +97,12 @@ export default function StudentLogin() {
             {/* Live Preview */}
             <div className="flex justify-center mb-6">
               <div className="w-32 h-32 border-4 border-primary rounded-full shadow-lg flex items-center justify-center overflow-hidden bg-surface-container-lowest">
-                <img src={`/avatares/${avatarId}.png`} alt="Avatar Preview" className="w-full h-full object-contain p-2 drop-shadow-md hover:scale-105 transition-transform" />
+                <img src={`/avatares/${avatarId}.jpg`} alt="Avatar Preview" className="w-full h-full object-contain p-2 drop-shadow-md hover:scale-105 transition-transform" />
               </div>
             </div>
 
             {/* Customization Options */}
-            <div className="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 bg-surface-container-low rounded-xl">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2 max-h-40 overflow-y-auto p-2 bg-surface-container-low rounded-xl">
               {avatars.map(id => (
                 <button 
                   key={id}
@@ -110,7 +110,7 @@ export default function StudentLogin() {
                   onClick={() => setAvatarId(id)}
                   className={`w-16 h-16 rounded-full overflow-hidden border-2 transition-all p-1 flex items-center justify-center bg-surface-container-lowest ${avatarId === id ? 'border-primary ring-4 ring-primary-fixed scale-110 shadow-lg' : 'border-outline-variant opacity-70 hover:opacity-100 hover:scale-105'}`}
                 >
-                  <img src={`/avatares/${id}.png`} alt={`Avatar ${id}`} className="w-full h-full object-contain drop-shadow-sm" />
+                  <img src={`/avatares/${id}.jpg`} alt={`Avatar ${id}`} className="w-full h-full object-contain drop-shadow-sm" />
                 </button>
               ))}
             </div>
