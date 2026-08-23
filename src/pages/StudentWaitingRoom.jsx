@@ -1,9 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { rtdb } from '../firebase';
+import { ref, onValue, set, remove } from 'firebase/database';
 
 export default function StudentWaitingRoom() {
   const [isExpelled, setIsExpelled] = useState(false);
+  const [studentData, setStudentData] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) {
+      navigate('/');
+      return;
+    }
+
+    // Listen to my own student node
+    const studentRef = ref(rtdb, `session/students/${studentId}`);
+    const unsubscribeStudent = onValue(studentRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        // Node was deleted (kicked)
+        setIsExpelled(true);
+      } else {
+        setStudentData(data);
+        if (data.status === 'kicked') {
+          setIsExpelled(true);
+        }
+      }
+    });
+
+    // Listen to global session state
+    const stateRef = ref(rtdb, `session/state`);
+    const unsubscribeState = onValue(stateRef, (snapshot) => {
+      const state = snapshot.val();
+      if (state && state.status === 'quiz') {
+        navigate('/quiz');
+      }
+    });
+
+    return () => {
+      unsubscribeStudent();
+      unsubscribeState();
+    };
+  }, [navigate]);
+
+  const handleReenterInfo = async () => {
+    const studentId = localStorage.getItem('studentId');
+    if (studentId) {
+      // Clean up the node if it still exists before leaving
+      try {
+        await remove(ref(rtdb, `session/students/${studentId}`));
+      } catch (e) {
+        console.error("Cleanup error", e);
+      }
+      localStorage.removeItem('studentId');
+    }
+    navigate('/');
+  };
+
+  const getShapeClasses = (shape, colorId) => {
+    const shapeClass = shape === 'circle' ? 'rounded-full' : shape === 'square' ? 'rounded-lg' : 'rounded-none';
+    const bgClass = `bg-${colorId}-200`;
+    const borderClass = `border-${colorId}-400`;
+    // We provide a fallback if the dynamic class tailwind compilation fails, 
+    // but in a real app we'd map this safely. For now, our colors are standard tailwind.
+    return `${shapeClass} ${bgClass} ${borderClass}`;
+  };
 
   return (
     <div className="bg-pattern animate-slide-bg min-h-screen overflow-hidden font-body-md text-on-surface flex flex-col relative select-none">
@@ -15,13 +78,13 @@ export default function StudentWaitingRoom() {
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-3xl fill">warning</span>
               <p className="font-label-lg text-label-lg uppercase tracking-wider text-center sm:text-left">
-                Your name and course have been removed by the teacher, please re-enter them
+                Tu nombre y curso han sido eliminados por el profesor, por favor vuelve a ingresarlos
               </p>
             </div>
             <button 
-              onClick={() => navigate('/')} 
+              onClick={handleReenterInfo} 
               className="bg-surface-container-lowest text-error font-label-lg text-label-lg px-6 py-3 rounded-full font-bold shadow-md hover:bg-surface-container-low transition-colors whitespace-nowrap">
-              Re-enter Info
+              Reingresar Datos
             </button>
           </div>
           <div className="h-screen w-full bg-surface-dim/30 backdrop-blur-sm interaction-blocker absolute top-full left-0"></div>
@@ -34,14 +97,19 @@ export default function StudentWaitingRoom() {
           <div className="absolute w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-primary-fixed-dim opacity-50 animate-pulse-ring"></div>
           <div className="absolute w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-primary-fixed opacity-30 animate-pulse-ring" style={{ animationDelay: '0.5s' }}></div>
           
-          <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-primary bg-surface-container-lowest shadow-lg overflow-hidden flex items-center justify-center z-10">
-            <div className="w-full h-full bg-blue-200"></div>
+          <div className={`relative w-32 h-32 md:w-48 md:h-48 ${studentData ? getShapeClasses(studentData.avatar.shape, studentData.avatar.color) : 'rounded-full bg-blue-200 border-blue-400'} border-4 shadow-lg overflow-hidden flex items-center justify-center z-10`}>
+            {/* Avatar face simple mockup */}
+            <div className="absolute top-1/3 w-full flex justify-center gap-3 md:gap-5">
+              <div className="w-3 h-4 md:w-4 md:h-5 bg-inverse-surface rounded-full animate-blink"></div>
+              <div className="w-3 h-4 md:w-4 md:h-5 bg-inverse-surface rounded-full animate-blink"></div>
+            </div>
+            <div className="absolute bottom-1/4 w-8 h-2 md:w-12 md:h-3 border-b-4 border-inverse-surface rounded-full"></div>
           </div>
         </div>
         
         <div className="text-center max-w-lg mx-auto bg-surface-container-lowest/80 backdrop-blur-md px-8 py-6 rounded-3xl shadow-sm border border-primary-fixed-dim">
           <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary mb-2 flex items-center justify-center gap-2">
-            Waiting for teacher
+            Esperando al profesor
             <span className="flex gap-1 items-baseline h-full">
               <span className="w-2 h-2 rounded-full bg-primary animate-bounce-dots" style={{ animationDelay: '0s' }}></span>
               <span className="w-2 h-2 rounded-full bg-primary animate-bounce-dots" style={{ animationDelay: '0.2s' }}></span>
@@ -49,17 +117,10 @@ export default function StudentWaitingRoom() {
             </span>
           </h1>
           <p className="font-body-md text-body-md text-on-surface-variant">
-            Get ready! The quiz will begin on the classroom screen shortly.
+            {studentData ? `¡Hola ${studentData.name.split(' ')[0]}!` : '¡Prepárate!'} El quiz empezará pronto en la pantalla principal.
           </p>
         </div>
       </main>
-      
-      {/* Dev button just to test expelled state visually */}
-      <button 
-        onClick={() => setIsExpelled(!isExpelled)}
-        className="fixed bottom-4 right-4 bg-gray-200 text-black px-2 py-1 text-xs rounded z-50">
-        Toggle Expelled State (Dev)
-      </button>
     </div>
   );
 }

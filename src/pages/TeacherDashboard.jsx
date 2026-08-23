@@ -4,7 +4,7 @@ import { auth, googleProvider } from '../firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 
 // Define the two allowed teacher emails here
-const ALLOWED_EMAILS = ['profesor1@gmail.com', 'profesor2@gmail.com'];
+const ALLOWED_EMAILS = ['gabriel.senior.daza@gmail.com', 'rovimartinez@gmail.com'];
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();

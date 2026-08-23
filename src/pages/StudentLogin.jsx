@@ -1,101 +1,163 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { rtdb } from '../firebase';
+import { ref, set } from 'firebase/database';
+import { v4 as uuidv4 } from 'uuid'; // we need to install uuid
 
 export default function StudentLogin() {
   const navigate = useNavigate();
+  const [name, setName] = useState('');
+  const [course, setCourse] = useState('');
+  const [avatarColor, setAvatarColor] = useState('blue');
+  const [avatarShape, setAvatarShape] = useState('circle');
   const [loading, setLoading] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState('red');
 
-  const handleSubmit = (e) => {
+  const colors = [
+    { id: 'blue', value: 'bg-blue-200 border-blue-400' },
+    { id: 'green', value: 'bg-green-200 border-green-400' },
+    { id: 'yellow', value: 'bg-yellow-200 border-yellow-400' },
+    { id: 'red', value: 'bg-red-200 border-red-400' },
+    { id: 'purple', value: 'bg-purple-200 border-purple-400' },
+    { id: 'orange', value: 'bg-orange-200 border-orange-400' }
+  ];
+
+  const shapes = [
+    { id: 'circle', value: 'rounded-full' },
+    { id: 'square', value: 'rounded-lg' },
+    { id: 'triangle', value: 'rounded-none' } // Simple representation for now
+  ];
+
+  const handleJoin = async (e) => {
     e.preventDefault();
+    if (!name || !course) return;
+    
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    
+    try {
+      // 1. Generate unique ID for this student session
+      const studentId = uuidv4();
+      
+      // 2. Save student data to Realtime Database
+      await set(ref(rtdb, `session/students/${studentId}`), {
+        name,
+        course,
+        avatar: { color: avatarColor, shape: avatarShape },
+        status: 'waiting',
+        joinedAt: Date.now()
+      });
+      
+      // 3. Save student ID to local storage so they don't lose session on refresh
+      localStorage.setItem('studentId', studentId);
+      
+      // 4. Navigate to waiting room
       navigate('/waiting-room');
-    }, 1500);
+    } catch (error) {
+      console.error("Error joining session:", error);
+      alert("Hubo un error al unirse a la sesión. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="bg-background min-h-screen flex items-center justify-center p-4">
-      <main className="w-full max-w-md w-[400px]">
-        <div className="bg-surface-container-lowest rounded-[24px] card-elevation overflow-hidden border border-primary/10 relative z-10">
+    <div className="bg-pattern animate-slide-bg min-h-screen font-body-md text-on-surface flex flex-col justify-center items-center p-4">
+      
+      {/* HEADER LOGO OR ICON */}
+      <div className="mb-8 flex flex-col items-center">
+        <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-lg border-b-4 border-[#00004c]">
+          <span className="material-symbols-outlined text-white text-4xl">extension</span>
+        </div>
+        <h1 className="text-headline-xl font-headline-xl text-primary font-bold tracking-tight drop-shadow-sm">EduPlay</h1>
+      </div>
+
+      <main className="w-full max-w-md bg-surface-container-lowest/90 backdrop-blur-md rounded-3xl p-6 md:p-8 shadow-xl border border-primary-fixed">
+        <form onSubmit={handleJoin} className="space-y-6">
           
-          <div className="h-32 bg-primary-fixed-dim relative overflow-hidden flex items-center justify-center p-6">
-            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(theme('colors.primary-container') 2px, transparent 2px)", backgroundSize: '16px 16px' }}></div>
-            <h1 className="text-3xl font-extrabold text-primary-container z-10">Colegio La Presentación</h1>
-          </div>
-          
-          <div className="p-card-padding flex flex-col gap-6">
-            <div className="text-center">
-              <h1 className="text-headline-lg-mobile font-headline-lg-mobile text-on-surface">Welcome!</h1>
-              <p className="text-body-md font-body-md text-on-surface-variant mt-1">Get ready to learn and play.</p>
+          <div className="space-y-4">
+            <h2 className="text-headline-lg-mobile font-headline-lg-mobile text-primary font-bold">Únete a la Clase</h2>
+            
+            <div className="space-y-1">
+              <label htmlFor="studentName" className="font-label-lg text-label-lg text-on-surface-variant ml-2">Nombre</label>
+              <input 
+                type="text" 
+                id="studentName" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Tu primer nombre y apellido..." 
+                className="w-full bg-surface-container-low border-2 border-outline-variant rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-fixed transition-all placeholder:text-outline-variant/60 font-bold text-on-surface"
+                required 
+              />
             </div>
             
-            <form className="flex flex-col gap-4" id="joinForm" onSubmit={handleSubmit}>
-              <div className="flex flex-col gap-2">
-                <label className="text-label-lg font-label-lg text-on-surface" htmlFor="studentName">Your Name</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none fill">face</span>
-                  <input className="w-full bg-surface-container-low border border-outline-variant rounded-xl py-3 pl-12 pr-4 text-body-md font-body-md text-on-surface placeholder-on-surface-variant/50 input-glow transition-all" id="studentName" placeholder="e.g. Maria G." required type="text" />
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-2">
-                <label className="text-label-lg font-label-lg text-on-surface" htmlFor="studentGrade">Grade / Course</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none fill">school</span>
-                  <select className="w-full bg-surface-container-low border border-outline-variant rounded-xl py-3 pl-12 pr-4 text-body-md font-body-md text-on-surface appearance-none input-glow transition-all" id="studentGrade" required defaultValue="">
-                    <option disabled value="">Select your grade</option>
-                    <option value="grade3">Grade 3</option>
-                    <option value="grade4">Grade 4</option>
-                    <option value="grade5">Grade 5</option>
-                    <option value="grade6">Grade 6</option>
-                  </select>
-                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
-                </div>
-              </div>
-              
-              <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/50">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-label-lg font-label-lg text-on-surface">Choose your Avatar Color</span>
-                  <span className="material-symbols-outlined text-primary fill">palette</span>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <button type="button" onClick={() => setSelectedAvatar('red')} className={`w-12 h-12 rounded-full border-2 border-transparent transition-all flex items-center justify-center bg-[#ffb4a8] relative ${selectedAvatar === 'red' ? 'selected' : 'avatar-option'}`}>
-                    <span className="material-symbols-outlined text-tertiary transition-opacity">check</span>
-                  </button>
-                  <button type="button" onClick={() => setSelectedAvatar('blue')} className={`w-12 h-12 rounded-full border-2 border-transparent transition-all flex items-center justify-center bg-[#bfc2ff] ${selectedAvatar === 'blue' ? 'selected' : 'avatar-option'}`}>
-                    <span className="material-symbols-outlined text-primary-container transition-opacity">check</span>
-                  </button>
-                  <button type="button" onClick={() => setSelectedAvatar('yellow')} className={`w-12 h-12 rounded-full border-2 border-transparent transition-all flex items-center justify-center bg-[#ffdf9e] ${selectedAvatar === 'yellow' ? 'selected' : 'avatar-option'}`}>
-                    <span className="material-symbols-outlined text-secondary transition-opacity">check</span>
-                  </button>
-                  <button type="button" onClick={() => setSelectedAvatar('gray')} className={`w-12 h-12 rounded-full border-2 border-transparent transition-all flex items-center justify-center bg-[#c6c5d5] ${selectedAvatar === 'gray' ? 'selected' : 'avatar-option'}`}>
-                    <span className="material-symbols-outlined text-on-surface-variant transition-opacity">check</span>
-                  </button>
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                <button type="submit" className="btn-3d btn-primary-3d w-full rounded-2xl py-5 flex items-center justify-center gap-3 relative overflow-hidden group">
-                  {loading ? (
-                    <>
-                      <span className="material-symbols-outlined animate-spin text-[32px]">sync</span>
-                      <span className="text-quiz-option font-quiz-option uppercase">Loading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined text-[32px] fill">sports_esports</span>
-                      <span className="text-quiz-option font-quiz-option tracking-wide uppercase">Join Game</span>
-                    </>
-                  )}
-                  <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shine"></div>
-                </button>
-              </div>
-            </form>
+            <div className="space-y-1">
+              <label htmlFor="course" className="font-label-lg text-label-lg text-on-surface-variant ml-2">Curso</label>
+              <input 
+                type="text" 
+                id="course" 
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                placeholder="Ej. 10A, 8vo..." 
+                className="w-full bg-surface-container-low border-2 border-outline-variant rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-fixed transition-all placeholder:text-outline-variant/60 font-bold text-on-surface"
+                required 
+              />
+            </div>
           </div>
-        </div>
+
+          {/* AVATAR CREATOR */}
+          <div className="bg-surface-container rounded-2xl p-4 border border-outline-variant/50">
+            <h3 className="font-label-lg text-label-lg text-primary mb-4 text-center">Crea tu Avatar</h3>
+            
+            {/* Live Preview */}
+            <div className="flex justify-center mb-6">
+              <div className={`w-24 h-24 ${shapes.find(s => s.id === avatarShape).value} ${colors.find(c => c.id === avatarColor).value} border-4 shadow-inner flex items-center justify-center transition-all duration-300 relative overflow-hidden`}>
+                <div className="absolute top-1/3 w-full flex justify-center gap-3">
+                  <div className="w-2.5 h-3 bg-inverse-surface rounded-full animate-blink"></div>
+                  <div className="w-2.5 h-3 bg-inverse-surface rounded-full animate-blink"></div>
+                </div>
+                <div className="absolute bottom-1/4 w-6 h-2 border-b-2 border-inverse-surface rounded-full"></div>
+              </div>
+            </div>
+
+            {/* Customization Options */}
+            <div className="space-y-4">
+              {/* Color Picker */}
+              <div>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ml-1">Color</p>
+                <div className="flex gap-2 justify-between">
+                  {colors.map(color => (
+                    <button 
+                      key={color.id}
+                      type="button" 
+                      onClick={() => setAvatarColor(color.id)}
+                      className={`w-8 h-8 rounded-full ${color.value.split(' ')[0]} ${avatarColor === color.id ? 'ring-2 ring-primary ring-offset-2 scale-110' : 'opacity-70 hover:opacity-100 hover:scale-105'} transition-all`}
+                    ></button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Shape Picker */}
+              <div>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ml-1">Forma</p>
+                <div className="flex gap-3 justify-center">
+                  <button type="button" onClick={() => setAvatarShape('circle')} className={`w-10 h-10 rounded-full bg-surface-dim border-2 ${avatarShape === 'circle' ? 'border-primary shadow-sm' : 'border-outline-variant'} flex items-center justify-center transition-colors`}><div className="w-4 h-4 rounded-full bg-on-surface-variant"></div></button>
+                  <button type="button" onClick={() => setAvatarShape('square')} className={`w-10 h-10 rounded-lg bg-surface-dim border-2 ${avatarShape === 'square' ? 'border-primary shadow-sm' : 'border-outline-variant'} flex items-center justify-center transition-colors`}><div className="w-4 h-4 rounded-sm bg-on-surface-variant"></div></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className={`w-full bg-primary text-on-primary font-headline-lg-mobile text-headline-lg-mobile py-4 rounded-2xl shadow-lg border-b-4 ${loading ? 'border-primary opacity-70' : 'border-[#00004c] active:border-b-0 active:translate-y-1'} transition-all flex items-center justify-center gap-2`}
+          >
+            {loading ? 'Entrando...' : 'Entrar a la Sala'}
+            {!loading && <span className="material-symbols-outlined font-bold">arrow_forward</span>}
+          </button>
+        </form>
       </main>
+      
+      <p className="mt-8 text-on-surface-variant/80 font-bold tracking-widest uppercase text-sm">Colegio de la Presentación</p>
     </div>
   );
 }
