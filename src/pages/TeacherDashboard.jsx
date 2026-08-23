@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, googleProvider } from '../firebase';
+import { auth, googleProvider, rtdb } from '../firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { ref, onValue } from 'firebase/database';
 
 // Define the two allowed teacher emails here
 const ALLOWED_EMAILS = ['gabriel.senior.daza@gmail.com', 'rovimartinez@gmail.com'];
@@ -11,13 +12,48 @@ export default function TeacherDashboard() {
   const [user, setUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [authError, setAuthError] = useState('');
+  
+  // Real-time states
+  const [activeStudents, setActiveStudents] = useState(0);
+  const [quizzesPlayed, setQuizzesPlayed] = useState(0);
+  
+  // Navigation state
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'activeGames', 'classes'
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoadingAuth(false);
     });
-    return () => unsubscribe();
+    
+    // Listen to real-time active students
+    const studentsRef = ref(rtdb, 'session/students');
+    const unsubscribeStudents = onValue(studentsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        // Contamos la cantidad de estudiantes que NO están 'kicked'
+        const students = snapshot.val();
+        const activeCount = Object.values(students).filter(s => s.status !== 'kicked').length;
+        setActiveStudents(activeCount);
+      } else {
+        setActiveStudents(0);
+      }
+    });
+
+    // Listen to global quizzes played (for now we listen to a mock node 'stats/quizzesPlayed')
+    const statsRef = ref(rtdb, 'stats/quizzesPlayed');
+    const unsubscribeStats = onValue(statsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setQuizzesPlayed(snapshot.val());
+      } else {
+        setQuizzesPlayed(0);
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeStudents();
+      unsubscribeStats();
+    };
   }, []);
 
   const handleLogin = async () => {
@@ -28,7 +64,6 @@ export default function TeacherDashboard() {
       
       // Check if the email is in the allowed list
       if (!ALLOWED_EMAILS.includes(email)) {
-        // If not allowed, sign them out immediately
         await signOut(auth);
         setAuthError('Access denied: This email is not authorized.');
       }
@@ -89,6 +124,14 @@ export default function TeacherDashboard() {
     );
   }
 
+  // Helper for active navigation styling
+  const navItemClass = (tabName) => 
+    `flex items-center gap-4 py-3 px-6 transition-all rounded-r-full cursor-pointer ${
+      activeTab === tabName 
+        ? 'text-primary-fixed-dim bg-primary-container font-bold active:scale-[0.98]' 
+        : 'text-on-surface-variant hover:bg-surface-container-highest active:scale-[0.98]'
+    }`;
+
   // If logged in and allowed, show the dashboard
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col md:flex-row font-body-md text-body-md pb-24 md:pb-0 pt-[72px] md:pt-0">
@@ -121,33 +164,28 @@ export default function TeacherDashboard() {
         <div className="flex-1 py-6 overflow-y-auto">
           <ul className="space-y-2 pr-4">
             <li>
-              <a className="flex items-center gap-4 text-primary-fixed-dim bg-primary-container font-bold rounded-r-full py-3 px-6 hover:bg-surface-container-highest transition-all active:scale-[0.98]" href="#">
+              <a onClick={() => setActiveTab('dashboard')} className={navItemClass('dashboard')}>
                 <span className="material-symbols-outlined fill">dashboard</span>
                 <span>Dashboard</span>
               </a>
             </li>
             <li>
-              <a className="flex items-center gap-4 text-on-surface-variant py-3 px-6 hover:bg-surface-container-highest transition-all active:scale-[0.98] rounded-r-full" href="#">
+              <a onClick={() => setActiveTab('activeGames')} className={navItemClass('activeGames')}>
                 <span className="material-symbols-outlined fill">play_circle</span>
                 <span>Active Games</span>
               </a>
             </li>
             <li>
-              <a className="flex items-center gap-4 text-on-surface-variant py-3 px-6 hover:bg-surface-container-highest transition-all active:scale-[0.98] rounded-r-full" href="#">
+              <a onClick={() => setActiveTab('classes')} className={navItemClass('classes')}>
                 <span className="material-symbols-outlined fill">group</span>
                 <span>Classes</span>
               </a>
             </li>
-            <li>
-              <a className="flex items-center gap-4 text-on-surface-variant py-3 px-6 hover:bg-surface-container-highest transition-all active:scale-[0.98] rounded-r-full" href="#">
-                <span className="material-symbols-outlined fill">assessment</span>
-                <span>Reports</span>
-              </a>
-            </li>
+            {/* Reportes removido según requerimiento */}
           </ul>
         </div>
         <div className="p-6 border-t border-outline-variant/30 flex flex-col gap-3">
-          <button className="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
+          <button onClick={() => navigate('/teacher/live')} className="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
             <span className="material-symbols-outlined">add</span>
             Start New Quiz
           </button>
@@ -159,74 +197,89 @@ export default function TeacherDashboard() {
 
       {/* Main Content Canvas */}
       <main className="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop min-h-screen">
-        <section className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-headline-xl font-headline-xl text-primary mb-2">Welcome Back, {user.displayName?.split(' ')[0]}!</h1>
-            <p className="text-on-surface-variant text-body-md font-body-md">Ready to engage your students today?</p>
-          </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <button onClick={() => navigate('/teacher/live')} className="flex-1 md:flex-none bg-secondary-container text-on-secondary-container py-3 px-6 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined">rocket_launch</span>
-              Launch Live
-            </button>
-          </div>
-        </section>
-
-        {/* Quick Stats Bento */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-game-gap mb-8">
-          <div className="bg-surface-container-lowest p-card-padding rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-primary/20 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-on-surface-variant mb-1 font-bold uppercase tracking-wider">Active Students</p>
-              <p className="text-headline-lg font-headline-lg text-primary">142</p>
-            </div>
-            <div className="bg-primary-container text-on-primary-container p-3 rounded-full">
-              <span className="material-symbols-outlined text-3xl fill">groups</span>
-            </div>
-          </div>
-          <div className="bg-surface-container-lowest p-card-padding rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-primary/20 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-on-surface-variant mb-1 font-bold uppercase tracking-wider">Quizzes Played</p>
-              <p className="text-headline-lg font-headline-lg text-primary">28</p>
-            </div>
-            <div className="bg-secondary-fixed text-on-secondary-fixed p-3 rounded-full">
-              <span className="material-symbols-outlined text-3xl fill">quiz</span>
-            </div>
-          </div>
-          <div className="bg-surface-container-lowest p-card-padding rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-primary/20 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-on-surface-variant mb-1 font-bold uppercase tracking-wider">Avg. Score</p>
-              <p className="text-headline-lg font-headline-lg text-primary">85%</p>
-            </div>
-            <div className="bg-tertiary-fixed text-on-tertiary-fixed p-3 rounded-full">
-              <span className="material-symbols-outlined text-3xl fill">moving</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Dashboard Grid */}
-        <section>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-headline-lg-mobile font-headline-lg-mobile md:text-headline-lg md:font-headline-lg text-primary">My Activities</h2>
-            <a className="text-primary font-label-lg text-label-lg hover:underline flex items-center gap-1" href="#">View All <span className="material-symbols-outlined">arrow_forward</span></a>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-game-gap">
-            {/* Card 1 */}
-            <div className="bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-outline-variant/30 overflow-hidden group hover:shadow-lg transition-shadow">
-              <div className="h-32 bg-primary-fixed-dim relative flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                <span className="absolute bottom-2 right-2 bg-background text-on-background text-xs px-2 py-1 rounded-full font-bold">12 Qs</span>
+        
+        {activeTab === 'dashboard' && (
+          <>
+            <section className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-headline-xl font-headline-xl text-primary mb-2">Welcome Back, {user.displayName?.split(' ')[0]}!</h1>
+                <p className="text-on-surface-variant text-body-md font-body-md">Ready to engage your students today?</p>
               </div>
-              <div className="p-4">
-                <h3 className="text-label-lg font-label-lg text-on-surface mb-1 line-clamp-1">Intro to Biology</h3>
-                <p className="text-sm text-on-surface-variant mb-4">Grade 6 Science</p>
-                <div className="flex gap-2">
-                  <button className="flex-1 bg-surface-container text-on-surface py-2 rounded-lg text-sm font-bold hover:bg-surface-container-highest transition-colors">Edit</button>
-                  <button onClick={() => navigate('/teacher/live')} className="flex-1 bg-primary text-on-primary py-2 rounded-lg text-sm font-bold btn-3d">Host</button>
+              <div className="flex gap-4 w-full md:w-auto">
+                <button onClick={() => navigate('/teacher/live')} className="flex-1 md:flex-none bg-secondary-container text-on-secondary-container py-3 px-6 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined">rocket_launch</span>
+                  Launch Live
+                </button>
+              </div>
+            </section>
+
+            {/* Quick Stats Bento */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-game-gap mb-8">
+              <div className="bg-surface-container-lowest p-card-padding rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-primary/20 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-on-surface-variant mb-1 font-bold uppercase tracking-wider">Active Students</p>
+                  <p className="text-headline-lg font-headline-lg text-primary">{activeStudents}</p>
+                </div>
+                <div className="bg-primary-container text-on-primary-container p-3 rounded-full">
+                  <span className="material-symbols-outlined text-3xl fill">groups</span>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
+              <div className="bg-surface-container-lowest p-card-padding rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-primary/20 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-on-surface-variant mb-1 font-bold uppercase tracking-wider">Quizzes Played</p>
+                  <p className="text-headline-lg font-headline-lg text-primary">{quizzesPlayed}</p>
+                </div>
+                <div className="bg-secondary-fixed text-on-secondary-fixed p-3 rounded-full">
+                  <span className="material-symbols-outlined text-3xl fill">quiz</span>
+                </div>
+              </div>
+            </section>
+
+            {/* Dashboard Grid */}
+            <section>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-headline-lg-mobile font-headline-lg-mobile md:text-headline-lg md:font-headline-lg text-primary">My Activities</h2>
+                <a onClick={() => setActiveTab('classes')} className="text-primary font-label-lg text-label-lg hover:underline flex items-center gap-1 cursor-pointer">View All <span className="material-symbols-outlined">arrow_forward</span></a>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-game-gap">
+                {/* Card 1 */}
+                <div className="bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-outline-variant/30 overflow-hidden group hover:shadow-lg transition-shadow">
+                  <div className="h-32 bg-primary-fixed-dim relative flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    <span className="absolute bottom-2 right-2 bg-background text-on-background text-xs px-2 py-1 rounded-full font-bold">12 Qs</span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-label-lg font-label-lg text-on-surface mb-1 line-clamp-1">Intro to Biology</h3>
+                    <p className="text-sm text-on-surface-variant mb-4">Grade 6 Science</p>
+                    <div className="flex gap-2">
+                      <button className="flex-1 bg-surface-container text-on-surface py-2 rounded-lg text-sm font-bold hover:bg-surface-container-highest transition-colors">Edit</button>
+                      <button onClick={() => navigate('/teacher/live')} className="flex-1 bg-primary text-on-primary py-2 rounded-lg text-sm font-bold btn-3d">Host</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {activeTab === 'activeGames' && (
+          <section className="flex flex-col items-center justify-center h-full text-center p-8">
+            <span className="material-symbols-outlined text-6xl text-primary/30 mb-4">play_circle</span>
+            <h2 className="text-headline-md font-headline-md text-primary mb-2">Active Games</h2>
+            <p className="text-on-surface-variant">Here you can monitor all currently running quiz sessions.</p>
+            <button onClick={() => navigate('/teacher/live')} className="mt-6 bg-primary text-on-primary py-3 px-6 rounded-lg font-label-lg btn-3d">
+              Ir a la Sesión Actual
+            </button>
+          </section>
+        )}
+
+        {activeTab === 'classes' && (
+          <section className="flex flex-col items-center justify-center h-full text-center p-8">
+            <span className="material-symbols-outlined text-6xl text-primary/30 mb-4">group</span>
+            <h2 className="text-headline-md font-headline-md text-primary mb-2">My Classes</h2>
+            <p className="text-on-surface-variant">Here you can manage your students and view their overall progress.</p>
+          </section>
+        )}
       </main>
     </div>
   );
