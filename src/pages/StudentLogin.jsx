@@ -51,10 +51,14 @@ export default function StudentLogin() {
       
       {/* HEADER LOGO OR ICON */}
       <div className="mb-8 flex flex-col items-center">
-        <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-lg border-b-4 border-[#00004c]">
-          <span className="material-symbols-outlined text-white text-4xl">extension</span>
+        <div className="h-28 mb-4 mx-auto flex items-center justify-center">
+          <img 
+            src="/Escudos-Presentacion-2020-08-scaled.png" 
+            alt="Colegio de la Presentación" 
+            className="h-full object-contain drop-shadow-md"
+          />
         </div>
-        <h1 className="text-headline-xl font-headline-xl text-primary font-bold tracking-tight drop-shadow-sm">EduPlay</h1>
+        <h1 className="text-headline-xl font-headline-xl text-primary font-bold tracking-tight drop-shadow-sm">Smart-Colpres</h1>
       </div>
 
       <main className="w-full max-w-md bg-surface-container-lowest/90 backdrop-blur-md rounded-3xl p-6 md:p-8 shadow-xl border border-primary-fixed">

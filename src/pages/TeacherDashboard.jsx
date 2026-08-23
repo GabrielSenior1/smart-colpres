@@ -95,7 +95,7 @@ export default function TeacherDashboard() {
       {/* Top App Bar (Mobile Only) */}
       <header className="md:hidden flex justify-between items-center w-full px-margin-mobile py-base bg-surface-container-lowest shadow-sm fixed top-0 left-0 z-50">
         <div className="flex items-center gap-2">
-          <span className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-primary">EduPlay</span>
+          <span className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-primary">Smart-Colpres</span>
         </div>
         <div className="flex gap-4">
           <button className="text-on-surface-variant hover:bg-surface-container transition-colors p-2 rounded-full active:scale-95 duration-100">

@@ -59,7 +59,7 @@ export default function Results() {
       {/* TopAppBar */}
       <header className="bg-surface-container-lowest border-b border-outline-variant shadow-sm flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-base docked full-width top-0 z-50">
         <div className="flex items-center gap-4">
-          <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-primary">EduPlay</h1>
+          <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-primary">Smart-Colpres</h1>
         </div>
         <div className="flex items-center gap-4">
           <span className="material-symbols-outlined text-primary hover:bg-surface-container transition-colors p-2 rounded-full cursor-pointer fill">notifications</span>
