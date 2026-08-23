@@ -50,26 +50,40 @@ export default function TeacherDashboard() {
   // If not logged in, show a simple login screen
   if (!user) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center p-4 font-body-md text-body-md">
-        <div className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-primary/20 max-w-md w-full text-center">
-          <div className="h-16 w-16 mb-4 bg-primary rounded-full mx-auto flex items-center justify-center">
-            <span className="material-symbols-outlined text-white text-3xl">school</span>
+      <div className="bg-pattern animate-slide-bg min-h-screen flex items-center justify-center p-4 font-body-md text-body-md relative overflow-hidden">
+        
+        {/* Floating decorative elements */}
+        <div className="absolute top-10 left-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-10 right-10 w-48 h-48 bg-secondary/10 rounded-full blur-2xl"></div>
+
+        <div className="bg-surface-container-lowest/90 backdrop-blur-md p-10 rounded-[2rem] shadow-2xl border border-primary/20 max-w-md w-full text-center relative z-10 transform transition-all hover:scale-[1.01]">
+          
+          <div className="h-28 mb-6 mx-auto flex items-center justify-center">
+            <img 
+              src="/Escudos-Presentacion-2020-08-scaled.png" 
+              alt="Colegio de la Presentación" 
+              className="h-full object-contain drop-shadow-md"
+            />
           </div>
-          <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-primary mb-2">Teacher Portal</h1>
-          <p className="text-on-surface-variant mb-8">Please log in to manage your quizzes and classes.</p>
+          
+          <h1 className="text-headline-lg font-headline-lg font-extrabold text-primary mb-2 tracking-tight">Portal Docente</h1>
+          <p className="text-on-surface-variant mb-8 text-label-lg font-label-lg">Administra tus actividades interactivas y supervisa a tus estudiantes en tiempo real.</p>
           
           {authError && (
-            <div className="bg-error-container text-on-error-container p-3 rounded-lg mb-4 text-sm font-bold">
-              {authError}
+            <div className="bg-error-container/80 backdrop-blur-sm text-on-error-container p-4 rounded-xl mb-6 text-sm font-bold border border-error/20 flex items-center gap-2 text-left">
+              <span className="material-symbols-outlined shrink-0">error</span>
+              <p>{authError}</p>
             </div>
           )}
 
           <button 
             onClick={handleLogin}
-            className="w-full bg-surface-container-lowest text-on-surface border border-outline-variant py-3 px-6 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-3 shadow-sm hover:bg-surface-container transition-colors">
-            <img className="w-5 h-5 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbrnvEYiXRF1gr130F6_prrLkbsym1sCgJXXpAiPwWkn2RNYXPV8OvUgozPT5Jk4r2pclJkvak81rG9o8rzhmH3dvHEukOwRzYiwfX5xOA9Uai-Eh3nJMmckgj-PUNKw5CA1jSoX8Y-XPyGsE_eSwFBFERxpuYw7JWceOl5eg4xK_SwKDGRGtG_An9P6MHHe1yyUpQNpKrge1gcXcoz7lspGKOEfKlW81StXN6kTcHAweLnmqwNqo" alt="Google" />
-            Login with Google
+            className="w-full bg-primary text-on-primary py-4 px-6 rounded-2xl font-label-lg text-label-lg btn-primary-3d flex items-center justify-center gap-3 shadow-lg hover:brightness-110 active:scale-95 transition-all mb-4">
+            <img className="w-6 h-6 object-contain bg-white rounded-full p-1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbrnvEYiXRF1gr130F6_prrLkbsym1sCgJXXpAiPwWkn2RNYXPV8OvUgozPT5Jk4r2pclJkvak81rG9o8rzhmH3dvHEukOwRzYiwfX5xOA9Uai-Eh3nJMmckgj-PUNKw5CA1jSoX8Y-XPyGsE_eSwFBFERxpuYw7JWceOl5eg4xK_SwKDGRGtG_An9P6MHHe1yyUpQNpKrge1gcXcoz7lspGKOEfKlW81StXN6kTcHAweLnmqwNqo" alt="Google" />
+            Acceder con Google
           </button>
+          
+          <p className="text-xs text-on-surface-variant/60 font-bold tracking-widest uppercase mt-6">Acceso Restringido</p>
         </div>
       </div>
     );
