@@ -82,15 +82,41 @@ export default function StudentLogin() {
             
             <div className="space-y-1">
               <label htmlFor="course" className="font-label-lg text-label-lg text-on-surface-variant ml-2">Curso</label>
-              <input 
-                type="text" 
+              <select 
                 id="course" 
                 value={course}
                 onChange={(e) => setCourse(e.target.value)}
-                placeholder="Ej. 10A, 8vo..." 
-                className="w-full bg-surface-container-low border-2 border-outline-variant rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-fixed transition-all placeholder:text-outline-variant/60 font-bold text-on-surface"
-                required 
-              />
+                className="w-full bg-surface-container-low border-2 border-outline-variant rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-fixed transition-all font-bold text-on-surface appearance-none cursor-pointer"
+                required
+              >
+                <option value="" disabled>Selecciona tu curso...</option>
+                <optgroup label="Sexto">
+                  <option value="Sexto A">Sexto A</option>
+                  <option value="Sexto B">Sexto B</option>
+                  <option value="Sexto C">Sexto C</option>
+                </optgroup>
+                <optgroup label="Séptimo">
+                  <option value="Séptimo A">Séptimo A</option>
+                  <option value="Séptimo B">Séptimo B</option>
+                  <option value="Séptimo C">Séptimo C</option>
+                </optgroup>
+                <optgroup label="Octavo">
+                  <option value="Octavo A">Octavo A</option>
+                  <option value="Octavo B">Octavo B</option>
+                  <option value="Octavo C">Octavo C</option>
+                </optgroup>
+                <optgroup label="Noveno">
+                  <option value="Noveno A">Noveno A</option>
+                  <option value="Noveno B">Noveno B</option>
+                  <option value="Noveno C">Noveno C</option>
+                </optgroup>
+                <optgroup label="Media">
+                  <option value="Décimo A">Décimo A</option>
+                  <option value="Décimo B">Décimo B</option>
+                  <option value="Undécimo A">Undécimo A</option>
+                  <option value="Undécimo B">Undécimo B</option>
+                </optgroup>
+              </select>
             </div>
           </div>
 
