@@ -42,8 +42,8 @@ export default function TeacherLive() {
 
   const handleStartQuiz = async () => {
     try {
-      await set(ref(rtdb, 'session/state/status'), 'quiz');
-      navigate('/teacher'); // Or navigate to a Teacher Quiz view if we make one
+      await set(ref(rtdb, 'session/state'), { status: 'quiz', startedAt: Date.now() });
+      navigate('/results'); // For now, we jump straight to results to watch it live
     } catch (e) {
       console.error("Error starting quiz:", e);
     }

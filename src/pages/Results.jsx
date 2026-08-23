@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { rtdb } from '../firebase';
+import { ref, onValue } from 'firebase/database';
 
 export default function Results() {
   const navigate = useNavigate();
   const [confetti, setConfetti] = useState([]);
+  const [students, setStudents] = useState([]);
 
   useEffect(() => {
+    // Generate Confetti
     const colors = ['#00004c', '#fdc003', '#e06857', '#4951c3'];
     const pieces = Array.from({ length: 50 }).map((_, i) => ({
       id: i,
@@ -17,8 +21,38 @@ export default function Results() {
     setConfetti(pieces);
     
     const t = setTimeout(() => setConfetti([]), 5000);
-    return () => clearTimeout(t);
+
+    // Read real-time students data
+    const studentsRef = ref(rtdb, 'session/students');
+    const unsubscribe = onValue(studentsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const studentList = Object.entries(data)
+          .map(([id, info]) => {
+            // Simple grading logic for the hardcoded question
+            const isCorrect = info.answer === 'Mars';
+            const score = isCorrect ? 1000 : 0; // Simple scoring
+            return { id, ...info, score, isCorrect };
+          })
+          .filter(s => s.status !== 'kicked') // Only show active
+          .sort((a, b) => b.score - a.score); // Sort by highest score
+        
+        setStudents(studentList);
+      }
+    });
+
+    return () => {
+      clearTimeout(t);
+      unsubscribe();
+    };
   }, []);
+
+  const getShapeClasses = (shape, colorId) => {
+    const shapeClass = shape === 'circle' ? 'rounded-full' : shape === 'square' ? 'rounded-lg' : 'rounded-none';
+    const bgClass = `bg-${colorId}-200`;
+    const borderClass = `border-${colorId}-400`;
+    return `${shapeClass} ${bgClass} ${borderClass}`;
+  };
 
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col font-body-md overflow-x-hidden">
@@ -28,8 +62,8 @@ export default function Results() {
           <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-primary">EduPlay</h1>
         </div>
         <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-primary hover:bg-surface-container transition-colors p-2 rounded-full cursor-pointer">notifications</span>
-          <span className="material-symbols-outlined text-primary hover:bg-surface-container transition-colors p-2 rounded-full cursor-pointer">settings</span>
+          <span className="material-symbols-outlined text-primary hover:bg-surface-container transition-colors p-2 rounded-full cursor-pointer fill">notifications</span>
+          <span className="material-symbols-outlined text-primary hover:bg-surface-container transition-colors p-2 rounded-full cursor-pointer fill">settings</span>
         </div>
       </header>
 
@@ -55,63 +89,11 @@ export default function Results() {
 
           <div className="max-w-6xl mx-auto space-y-12 relative z-10">
             
-            {/* Student View: Final Score Card */}
-            <section className="bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] p-8 text-center border-t-8 border-primary relative overflow-hidden">
-              <h2 className="text-headline-lg font-headline-lg text-primary mb-2">Quiz Completed!</h2>
-              <p className="text-body-md font-body-md text-on-surface-variant mb-6">Biology 101 - Cell Structures</p>
-              
-              <div className="inline-block bg-primary-fixed rounded-full p-8 mb-6 relative">
-                <span className="material-symbols-outlined text-6xl text-primary absolute -top-4 -right-4 rotate-12 fill">workspace_premium</span>
-                <div className="text-headline-xl font-headline-xl text-primary">850</div>
-                <div className="text-label-lg font-label-lg text-on-primary-fixed-variant mt-2">Final Score</div>
-              </div>
-              
-              <div className="flex justify-center gap-4">
-                <div className="bg-surface-container-low rounded-lg p-4 w-32">
-                  <div className="text-headline-lg-mobile font-headline-lg-mobile text-primary">8/10</div>
-                  <div className="text-sm text-on-surface-variant">Correct</div>
-                </div>
-                <div className="bg-surface-container-low rounded-lg p-4 w-32">
-                  <div className="text-headline-lg-mobile font-headline-lg-mobile text-primary">12s</div>
-                  <div className="text-sm text-on-surface-variant">Avg Time</div>
-                </div>
-              </div>
-            </section>
-
             {/* Teacher View: Leaderboard */}
             <section>
-              <h3 className="text-headline-lg-mobile font-headline-lg-mobile text-primary mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary-container">trophy</span> Class Leaderboard
+              <h3 className="text-headline-lg-mobile font-headline-lg-mobile text-primary mb-6 flex items-center gap-2 mt-8">
+                <span className="material-symbols-outlined text-secondary-container fill">trophy</span> Class Leaderboard
               </h3>
-              
-              {/* Podium */}
-              <div className="flex justify-center items-end gap-4 mb-12 h-64">
-                {/* 2nd Place */}
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full border-4 border-surface-container-highest mb-2 bg-purple-200"></div>
-                  <div className="bg-surface-container-highest w-24 h-32 rounded-t-lg flex flex-col items-center justify-start pt-4 shadow-md relative border-b-[6px] border-outline-variant">
-                    <span className="text-headline-lg-mobile font-headline-lg-mobile text-on-surface-variant font-bold">2</span>
-                    <span className="text-sm font-bold text-on-surface-variant mt-2">Maria G.</span>
-                  </div>
-                </div>
-                {/* 1st Place */}
-                <div className="flex flex-col items-center z-10">
-                  <div className="w-20 h-20 rounded-full border-4 border-secondary-container mb-2 bg-yellow-200 relative -top-4"></div>
-                  <div className="bg-secondary-container w-28 h-40 rounded-t-lg flex flex-col items-center justify-start pt-4 shadow-lg relative border-b-[8px] border-[#b38702]">
-                    <span className="material-symbols-outlined text-on-secondary-container text-3xl fill">workspace_premium</span>
-                    <span className="text-headline-lg-mobile font-headline-lg-mobile text-on-secondary-container font-bold">1</span>
-                    <span className="text-sm font-bold text-on-secondary-container mt-2">Leo V.</span>
-                  </div>
-                </div>
-                {/* 3rd Place */}
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full border-4 border-[#cd7f32] mb-2 bg-orange-200"></div>
-                  <div className="bg-[#cd7f32] w-24 h-24 rounded-t-lg flex flex-col items-center justify-start pt-4 shadow-md relative border-b-[6px] border-[#8c5622]">
-                    <span className="text-headline-lg-mobile font-headline-lg-mobile text-white font-bold">3</span>
-                    <span className="text-sm font-bold text-white mt-2">Sam T.</span>
-                  </div>
-                </div>
-              </div>
 
               {/* Detailed Table */}
               <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
@@ -120,38 +102,52 @@ export default function Results() {
                     <tr className="bg-surface-container-low border-b border-outline-variant">
                       <th className="p-4 text-label-lg font-label-lg text-on-surface-variant">Rank</th>
                       <th className="p-4 text-label-lg font-label-lg text-on-surface-variant">Student</th>
+                      <th className="p-4 text-label-lg font-label-lg text-on-surface-variant">Answered</th>
                       <th className="p-4 text-label-lg font-label-lg text-on-surface-variant">Score</th>
                       <th className="p-4 text-label-lg font-label-lg text-on-surface-variant text-center">Alerts</th>
                     </tr>
                   </thead>
                   <tbody className="text-body-md font-body-md">
-                    <tr className="border-b border-outline-variant bg-secondary-fixed/20">
-                      <td className="p-4 font-bold text-secondary-container flex items-center gap-2"><span className="material-symbols-outlined text-sm">military_tech</span> 1</td>
-                      <td className="p-4 font-bold">Leo V.</td>
-                      <td className="p-4">1250</td>
-                      <td className="p-4 text-center text-outline">-</td>
-                    </tr>
-                    <tr className="border-b border-outline-variant">
-                      <td className="p-4 text-on-surface-variant">2</td>
-                      <td className="p-4">Maria G.</td>
-                      <td className="p-4">1100</td>
-                      <td className="p-4 text-center text-outline">-</td>
-                    </tr>
-                    <tr className="border-b border-outline-variant">
-                      <td className="p-4 text-on-surface-variant">3</td>
-                      <td className="p-4">Sam T.</td>
-                      <td className="p-4">980</td>
-                      <td className="p-4 text-center">
-                        <span className="material-symbols-outlined text-error" title="Screen switch detected">swap_horiz</span>
-                      </td>
-                    </tr>
+                    {students.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="p-8 text-center text-on-surface-variant">No students participated.</td>
+                      </tr>
+                    ) : (
+                      students.map((student, index) => (
+                        <tr key={student.id} className={`border-b border-outline-variant ${index === 0 ? 'bg-secondary-fixed/20' : ''}`}>
+                          <td className={`p-4 font-bold flex items-center gap-2 ${index === 0 ? 'text-secondary-container' : 'text-on-surface-variant'}`}>
+                            {index === 0 && <span className="material-symbols-outlined text-sm fill">military_tech</span>} 
+                            {index + 1}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 border flex items-center justify-center shrink-0 ${getShapeClasses(student.avatar?.shape, student.avatar?.color)}`}>
+                                <span className="font-bold text-[10px] uppercase text-surface-dim opacity-50">{student.name.charAt(0)}</span>
+                              </div>
+                              <span className="font-bold">{student.name}</span>
+                            </div>
+                          </td>
+                          <td className="p-4 text-on-surface-variant">{student.answer || '-'}</td>
+                          <td className="p-4 font-bold">{student.score}</td>
+                          <td className="p-4 text-center">
+                            {student.cheated ? (
+                              <span className="material-symbols-outlined text-error cursor-help" title="Screen switch detected">swap_horiz</span>
+                            ) : (
+                              <span className="text-outline">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </section>
             
             <div className="flex justify-center mt-8 pb-12">
-              <button onClick={() => navigate('/teacher')} className="bg-primary text-on-primary px-8 py-3 rounded-xl font-bold btn-3d">Return to Dashboard</button>
+              <button onClick={() => navigate('/teacher')} className="bg-primary text-on-primary px-8 py-3 rounded-xl font-bold btn-3d shadow-lg hover:bg-primary-container hover:text-on-primary-container transition-colors">
+                Return to Dashboard
+              </button>
             </div>
             
           </div>
