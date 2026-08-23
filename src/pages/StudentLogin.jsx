@@ -8,24 +8,11 @@ export default function StudentLogin() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [course, setCourse] = useState('');
-  const [avatarColor, setAvatarColor] = useState('blue');
-  const [avatarShape, setAvatarShape] = useState('circle');
+  const [avatarId, setAvatarId] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  const colors = [
-    { id: 'blue', value: 'bg-blue-200 border-blue-400' },
-    { id: 'green', value: 'bg-green-200 border-green-400' },
-    { id: 'yellow', value: 'bg-yellow-200 border-yellow-400' },
-    { id: 'red', value: 'bg-red-200 border-red-400' },
-    { id: 'purple', value: 'bg-purple-200 border-purple-400' },
-    { id: 'orange', value: 'bg-orange-200 border-orange-400' }
-  ];
-
-  const shapes = [
-    { id: 'circle', value: 'rounded-full' },
-    { id: 'square', value: 'rounded-lg' },
-    { id: 'triangle', value: 'rounded-none' } // Simple representation for now
-  ];
+  // Generamos un arreglo con los IDs de los 13 avatares
+  const avatars = Array.from({ length: 13 }, (_, i) => i + 1);
 
   const handleJoin = async (e) => {
     e.preventDefault();
@@ -41,7 +28,7 @@ export default function StudentLogin() {
       await set(ref(rtdb, `session/students/${studentId}`), {
         name,
         course,
-        avatar: { color: avatarColor, shape: avatarShape },
+        avatar: avatarId, // Ahora guardamos el ID del PNG directamente
         status: 'waiting',
         joinedAt: Date.now()
       });
@@ -105,44 +92,27 @@ export default function StudentLogin() {
 
           {/* AVATAR CREATOR */}
           <div className="bg-surface-container rounded-2xl p-4 border border-outline-variant/50">
-            <h3 className="font-label-lg text-label-lg text-primary mb-4 text-center">Crea tu Avatar</h3>
+            <h3 className="font-label-lg text-label-lg text-primary mb-4 text-center">Selecciona tu Avatar</h3>
             
             {/* Live Preview */}
             <div className="flex justify-center mb-6">
-              <div className={`w-24 h-24 ${shapes.find(s => s.id === avatarShape).value} ${colors.find(c => c.id === avatarColor).value} border-4 shadow-inner flex items-center justify-center transition-all duration-300 relative overflow-hidden`}>
-                <div className="absolute top-1/3 w-full flex justify-center gap-3">
-                  <div className="w-2.5 h-3 bg-inverse-surface rounded-full animate-blink"></div>
-                  <div className="w-2.5 h-3 bg-inverse-surface rounded-full animate-blink"></div>
-                </div>
-                <div className="absolute bottom-1/4 w-6 h-2 border-b-2 border-inverse-surface rounded-full"></div>
+              <div className="w-28 h-28 border-4 border-primary rounded-full shadow-lg flex items-center justify-center overflow-hidden bg-white">
+                <img src={`/avatares/${avatarId}.png`} alt="Avatar Preview" className="w-full h-full object-cover" />
               </div>
             </div>
 
             {/* Customization Options */}
-            <div className="space-y-4">
-              {/* Color Picker */}
-              <div>
-                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ml-1">Color</p>
-                <div className="flex gap-2 justify-between">
-                  {colors.map(color => (
-                    <button 
-                      key={color.id}
-                      type="button" 
-                      onClick={() => setAvatarColor(color.id)}
-                      className={`w-8 h-8 rounded-full ${color.value.split(' ')[0]} ${avatarColor === color.id ? 'ring-2 ring-primary ring-offset-2 scale-110' : 'opacity-70 hover:opacity-100 hover:scale-105'} transition-all`}
-                    ></button>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Shape Picker */}
-              <div>
-                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 ml-1">Forma</p>
-                <div className="flex gap-3 justify-center">
-                  <button type="button" onClick={() => setAvatarShape('circle')} className={`w-10 h-10 rounded-full bg-surface-dim border-2 ${avatarShape === 'circle' ? 'border-primary shadow-sm' : 'border-outline-variant'} flex items-center justify-center transition-colors`}><div className="w-4 h-4 rounded-full bg-on-surface-variant"></div></button>
-                  <button type="button" onClick={() => setAvatarShape('square')} className={`w-10 h-10 rounded-lg bg-surface-dim border-2 ${avatarShape === 'square' ? 'border-primary shadow-sm' : 'border-outline-variant'} flex items-center justify-center transition-colors`}><div className="w-4 h-4 rounded-sm bg-on-surface-variant"></div></button>
-                </div>
-              </div>
+            <div className="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 bg-surface-container-low rounded-xl">
+              {avatars.map(id => (
+                <button 
+                  key={id}
+                  type="button" 
+                  onClick={() => setAvatarId(id)}
+                  className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${avatarId === id ? 'border-primary ring-2 ring-primary-fixed scale-110 shadow-md' : 'border-outline-variant opacity-70 hover:opacity-100 hover:scale-105'}`}
+                >
+                  <img src={`/avatares/${id}.png`} alt={`Avatar ${id}`} className="w-full h-full object-cover bg-white" />
+                </button>
+              ))}
             </div>
           </div>
 

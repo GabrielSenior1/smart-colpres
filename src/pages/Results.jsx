@@ -121,8 +121,8 @@ export default function Results() {
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 border flex items-center justify-center shrink-0 ${getShapeClasses(student.avatar?.shape, student.avatar?.color)}`}>
-                                <span className="font-bold text-[10px] uppercase text-surface-dim opacity-50">{student.name.charAt(0)}</span>
+                              <div className="w-10 h-10 border-2 border-primary rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-white">
+                                <img src={`/avatares/${student.avatar}.png`} alt="Avatar" className="w-full h-full object-cover" />
                               </div>
                               <span className="font-bold">{student.name}</span>
                             </div>

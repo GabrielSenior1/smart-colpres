@@ -97,13 +97,14 @@ export default function StudentWaitingRoom() {
           <div className="absolute w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-primary-fixed-dim opacity-50 animate-pulse-ring"></div>
           <div className="absolute w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-primary-fixed opacity-30 animate-pulse-ring" style={{ animationDelay: '0.5s' }}></div>
           
-          <div className={`relative w-32 h-32 md:w-48 md:h-48 ${studentData ? getShapeClasses(studentData.avatar.shape, studentData.avatar.color) : 'rounded-full bg-blue-200 border-blue-400'} border-4 shadow-lg overflow-hidden flex items-center justify-center z-10`}>
-            {/* Avatar face simple mockup */}
-            <div className="absolute top-1/3 w-full flex justify-center gap-3 md:gap-5">
-              <div className="w-3 h-4 md:w-4 md:h-5 bg-inverse-surface rounded-full animate-blink"></div>
-              <div className="w-3 h-4 md:w-4 md:h-5 bg-inverse-surface rounded-full animate-blink"></div>
-            </div>
-            <div className="absolute bottom-1/4 w-8 h-2 md:w-12 md:h-3 border-b-4 border-inverse-surface rounded-full"></div>
+          <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center z-10 bg-white border-primary">
+            {studentData?.avatar ? (
+              <img src={`/avatares/${studentData.avatar}.png`} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-surface-container-low flex items-center justify-center">
+                <span className="material-symbols-outlined text-4xl text-outline">person</span>
+              </div>
+            )}
           </div>
         </div>
         

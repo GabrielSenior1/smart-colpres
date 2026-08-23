@@ -122,8 +122,8 @@ export default function TeacherLive() {
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                   {students.map(student => (
                     <div key={student.id} className="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3 border border-outline-variant card-shadow group relative overflow-hidden">
-                      <div className={`w-10 h-10 border-2 overflow-hidden shrink-0 flex items-center justify-center ${getShapeClasses(student.avatar.shape, student.avatar.color)}`}>
-                        <span className="font-bold text-xs uppercase text-surface-dim opacity-50">{student.name.charAt(0)}</span>
+                      <div className="w-12 h-12 border-2 border-primary rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-white">
+                        <img src={`/avatares/${student.avatar}.png`} alt="Avatar" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex flex-col overflow-hidden">
                         <span className="font-label-lg text-label-lg truncate leading-tight">{student.name}</span>
