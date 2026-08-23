@@ -64,30 +64,30 @@ export default function TeacherLive() {
           <span className="text-headline-lg font-headline-lg font-bold text-primary">Smart-Colpres</span>
           <span className="text-on-surface-variant font-label-lg text-label-lg ml-4">Sesión Activa</span>
         </div>
-        <div className="flex gap-2">
-          <span className="material-symbols-outlined fill">notifications</span>
-          <span className="material-symbols-outlined fill">settings</span>
+        <div className="flex items-center gap-4 text-primary">
+          <button className="hover:bg-surface-container p-2 rounded-full transition-colors active:scale-95 duration-100">
+            <span className="material-symbols-outlined fill">notifications</span>
+          </button>
+          <button className="hover:bg-surface-container p-2 rounded-full transition-colors active:scale-95 duration-100">
+            <span className="material-symbols-outlined fill">settings</span>
+          </button>
         </div>
       </header>
       
       {/* Main Content Area */}
-      <main className="p-4 md:p-6 lg:p-8 flex-grow overflow-y-auto">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <main className="flex-1 flex overflow-hidden relative">
+        <div className="w-full flex flex-col lg:flex-row h-full transition-opacity duration-300" id="view-waiting">
           
-          {/* Header Info */}
-          <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-outline-variant flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
-            
-            <div className="z-10">
-              <span className="inline-block px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-full text-xs font-bold uppercase tracking-wider mb-3">Live Session</span>
-              <h2 className="text-display-sm font-display-sm font-bold text-on-surface mb-2">Ciencias Naturales - 8vo</h2>
-              <p className="text-on-surface-variant font-body-lg">Esperando a que los estudiantes se unan al quiz: <span className="font-bold text-primary">El Sistema Solar</span></p>
+          {/* Left Side: QR Code & Pin */}
+          <section className="lg:w-5/12 bg-surface-container-low p-margin-desktop flex flex-col items-center justify-center border-r border-outline-variant relative">
+            <div className="text-center mb-8">
+              <h2 className="text-headline-xl font-headline-xl text-primary mb-2">Únete a la clase</h2>
+              <p className="text-body-md font-body-md text-on-surface-variant">Escanea el código QR o entra desde tu app</p>
             </div>
             
-            <div className="flex items-center gap-4 bg-surface-container rounded-xl p-3 shrink-0 z-10 border border-outline-variant/50 shadow-inner">
-              <div className="w-16 h-16 bg-white rounded-lg border flex items-center justify-center p-1">
-                <img className="w-full h-full object-contain" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=Smart-Colpres_Local" alt="QR Code" />
-              </div>
+            <div className="bg-surface-container-lowest p-card-padding rounded-xl card-shadow border-2 border-primary mb-8 w-64 h-64 flex items-center justify-center">
+              {/* Dummy QR code generation based on current URL just for visual purposes */}
+              <img className="w-full h-full object-contain" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=Smart-Colpres_Local" alt="QR Code" />
             </div>
             
             <button 
