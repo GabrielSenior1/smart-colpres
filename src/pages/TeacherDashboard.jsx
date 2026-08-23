@@ -1,9 +1,81 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth, googleProvider } from '../firebase';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+
+// Define the two allowed teacher emails here
+const ALLOWED_EMAILS = ['profesor1@gmail.com', 'profesor2@gmail.com'];
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [authError, setAuthError] = useState('');
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoadingAuth(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogin = async () => {
+    setAuthError('');
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const email = result.user.email;
+      
+      // Check if the email is in the allowed list
+      if (!ALLOWED_EMAILS.includes(email)) {
+        // If not allowed, sign them out immediately
+        await signOut(auth);
+        setAuthError('Access denied: This email is not authorized.');
+      }
+    } catch (error) {
+      console.error("Error signing in with Google", error);
+      setAuthError('Error during login. Try again.');
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/');
+  };
+
+  if (loadingAuth) {
+    return <div className="flex h-screen items-center justify-center bg-background"><span className="text-primary font-bold">Cargando...</span></div>;
+  }
+
+  // If not logged in, show a simple login screen
+  if (!user) {
+    return (
+      <div className="bg-background min-h-screen flex items-center justify-center p-4 font-body-md text-body-md">
+        <div className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-primary/20 max-w-md w-full text-center">
+          <div className="h-16 w-16 mb-4 bg-primary rounded-full mx-auto flex items-center justify-center">
+            <span className="material-symbols-outlined text-white text-3xl">school</span>
+          </div>
+          <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-primary mb-2">Teacher Portal</h1>
+          <p className="text-on-surface-variant mb-8">Please log in to manage your quizzes and classes.</p>
+          
+          {authError && (
+            <div className="bg-error-container text-on-error-container p-3 rounded-lg mb-4 text-sm font-bold">
+              {authError}
+            </div>
+          )}
+
+          <button 
+            onClick={handleLogin}
+            className="w-full bg-surface-container-lowest text-on-surface border border-outline-variant py-3 px-6 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-3 shadow-sm hover:bg-surface-container transition-colors">
+            <img className="w-5 h-5 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbrnvEYiXRF1gr130F6_prrLkbsym1sCgJXXpAiPwWkn2RNYXPV8OvUgozPT5Jk4r2pclJkvak81rG9o8rzhmH3dvHEukOwRzYiwfX5xOA9Uai-Eh3nJMmckgj-PUNKw5CA1jSoX8Y-XPyGsE_eSwFBFERxpuYw7JWceOl5eg4xK_SwKDGRGtG_An9P6MHHe1yyUpQNpKrge1gcXcoz7lspGKOEfKlW81StXN6kTcHAweLnmqwNqo" alt="Google" />
+            Login with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If logged in and allowed, show the dashboard
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col md:flex-row font-body-md text-body-md pb-24 md:pb-0 pt-[72px] md:pt-0">
       {/* Top App Bar (Mobile Only) */}
@@ -24,9 +96,13 @@ export default function TeacherDashboard() {
       {/* Side Nav Bar (Desktop Only) */}
       <nav className="hidden md:flex flex-col h-screen w-64 bg-surface-container-low border-r border-outline-variant shadow-md fixed left-0 top-0 z-40">
         <div className="p-6 flex flex-col items-center border-b border-outline-variant/30">
-          <div className="h-12 w-12 mb-4 bg-primary rounded-full"></div>
-          <h2 className="text-label-lg font-label-lg font-bold text-primary">Santa Marta</h2>
-          <p className="text-sm text-on-surface-variant">EduPlay Portal</p>
+          {user.photoURL ? (
+            <img src={user.photoURL} alt="Profile" className="h-12 w-12 mb-4 rounded-full border-2 border-primary" />
+          ) : (
+            <div className="h-12 w-12 mb-4 bg-primary rounded-full"></div>
+          )}
+          <h2 className="text-label-lg font-label-lg font-bold text-primary text-center leading-tight">{user.displayName}</h2>
+          <p className="text-xs text-on-surface-variant mt-1">Santa Marta Portal</p>
         </div>
         <div className="flex-1 py-6 overflow-y-auto">
           <ul className="space-y-2 pr-4">
@@ -56,10 +132,13 @@ export default function TeacherDashboard() {
             </li>
           </ul>
         </div>
-        <div className="p-6 border-t border-outline-variant/30">
+        <div className="p-6 border-t border-outline-variant/30 flex flex-col gap-3">
           <button className="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
             <span className="material-symbols-outlined">add</span>
             Start New Quiz
+          </button>
+          <button onClick={handleLogout} className="w-full bg-surface-container text-error py-2 rounded-lg text-sm font-bold hover:bg-error-container transition-colors">
+            Logout
           </button>
         </div>
       </nav>
@@ -68,13 +147,10 @@ export default function TeacherDashboard() {
       <main className="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop min-h-screen">
         <section className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-headline-xl font-headline-xl text-primary mb-2">Welcome Back, Prof. Gomez!</h1>
+            <h1 className="text-headline-xl font-headline-xl text-primary mb-2">Welcome Back, {user.displayName?.split(' ')[0]}!</h1>
             <p className="text-on-surface-variant text-body-md font-body-md">Ready to engage your students today?</p>
           </div>
           <div className="flex gap-4 w-full md:w-auto">
-            <button className="flex-1 md:flex-none bg-surface-container-lowest text-on-surface border border-outline-variant py-3 px-6 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-3 shadow-sm">
-              Login with Google
-            </button>
             <button onClick={() => navigate('/teacher/live')} className="flex-1 md:flex-none bg-secondary-container text-on-secondary-container py-3 px-6 rounded-lg font-label-lg text-label-lg btn-3d flex items-center justify-center gap-2">
               <span className="material-symbols-outlined">rocket_launch</span>
               Launch Live
