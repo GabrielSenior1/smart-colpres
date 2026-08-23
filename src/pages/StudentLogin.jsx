@@ -100,22 +100,6 @@ export default function StudentLogin() {
                   <option value="Séptimo B">Séptimo B</option>
                   <option value="Séptimo C">Séptimo C</option>
                 </optgroup>
-                <optgroup label="Octavo">
-                  <option value="Octavo A">Octavo A</option>
-                  <option value="Octavo B">Octavo B</option>
-                  <option value="Octavo C">Octavo C</option>
-                </optgroup>
-                <optgroup label="Noveno">
-                  <option value="Noveno A">Noveno A</option>
-                  <option value="Noveno B">Noveno B</option>
-                  <option value="Noveno C">Noveno C</option>
-                </optgroup>
-                <optgroup label="Media">
-                  <option value="Décimo A">Décimo A</option>
-                  <option value="Décimo B">Décimo B</option>
-                  <option value="Undécimo A">Undécimo A</option>
-                  <option value="Undécimo B">Undécimo B</option>
-                </optgroup>
               </select>
             </div>
           </div>
