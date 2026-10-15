@@ -30,6 +30,7 @@ export default function TeacherDashboard() {
 
   // Expanded report for viewing details
   const [expandedReportPin, setExpandedReportPin] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleSetting = (activityId, setting) => {
     setActivitySettings(prev => ({
@@ -246,6 +247,22 @@ export default function TeacherDashboard() {
         : 'text-on-surface-variant hover:bg-surface-container-highest active:scale-[0.98]'
     }`;
 
+  // Filtered and sorted activities (newest/highest numbers first)
+  const filteredActivities = Object.entries(activities)
+    .sort(([idA, actA], [idB, actB]) => {
+      const numA = parseInt(idA.replace(/\D/g, ''), 10) || 0;
+      const numB = parseInt(idB.replace(/\D/g, ''), 10) || 0;
+      if (numA !== numB) return numB - numA;
+      return (actA.title || '').localeCompare(actB.title || '');
+    })
+    .filter(([id, activity]) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (activity.title || '').toLowerCase().includes(q) ||
+             (activity.subject || '').toLowerCase().includes(q) ||
+             id.toLowerCase().includes(q);
+    });
+
   // If logged in and allowed, show the dashboard
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col md:flex-row font-body-md text-body-md pb-24 md:pb-0 pt-[72px] md:pt-0">
@@ -350,104 +367,143 @@ export default function TeacherDashboard() {
 
             {/* Dashboard Grid */}
             <section>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-headline-lg-mobile font-headline-lg-mobile md:text-headline-lg md:font-headline-lg text-primary">My Activities</h2>
-                <a onClick={() => setActiveTab('classes')} className="text-primary font-label-lg text-label-lg hover:underline flex items-center gap-1 cursor-pointer">View All <span className="material-symbols-outlined">arrow_forward</span></a>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 className="text-headline-lg-mobile font-headline-lg-mobile md:text-headline-lg md:font-headline-lg text-primary">Mis Actividades</h2>
+                  <p className="text-xs text-on-surface-variant">Mostrando las más recientes primero</p>
+                </div>
+                
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-72">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">
+                    search
+                  </span>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar actividad o tema..."
+                    className="w-full pl-10 pr-8 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-bold"
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface text-sm font-bold">
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-game-gap">
-                {Object.entries(activities).map(([activityId, activity]) => {
-                  const hostedSessionEntry = Object.entries(activeSessions).find(
-                    ([pin, session]) => session.state && session.state.activityId === activityId
-                  );
-                  const isHosted = !!hostedSessionEntry;
-                  const hostedPin = hostedSessionEntry ? hostedSessionEntry[0] : null;
 
-                  return (
-                    <div key={activityId} className={`bg-surface-container-lowest rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.08)] border ${isHosted ? 'border-secondary-container bg-secondary-fixed/5' : 'border-outline-variant'} flex flex-col justify-between relative overflow-hidden transition-colors`}>
-                      {isHosted && (
-                        <div className="absolute top-0 right-0 bg-secondary-container text-on-secondary-container text-xs font-bold px-3 py-1 rounded-bl-lg animate-pulse">
-                          LIVE NOW
-                        </div>
-                      )}
-                      
-                      <div className="flex-1 mb-4">
-                        <div className="flex items-center gap-2 mb-2 mt-2">
-                          <span className="material-symbols-outlined text-on-surface-variant fill">article</span>
-                          <span className="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">{activity.subject}</span>
-                        </div>
-                        <h3 className="text-headline-sm-mobile md:text-headline-sm font-headline-sm-mobile md:font-headline-sm font-bold text-primary mb-1">
-                          {activity.title}
-                        </h3>
-                        <p className="text-body-sm font-body-sm text-on-surface-variant mb-2">
-                          {activity.questions?.length || 0} questions • Autogenerated
-                        </p>
-                        
-                        {/* Settings Panel */}
-                        <div className="mt-2 bg-surface-container p-3 rounded-xl border border-outline-variant/30 flex flex-col gap-3">
-                          
-                          {/* Mode Selector */}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Modo de Juego</span>
-                            <div className="flex bg-surface-container-lowest rounded-lg p-1 border border-outline-variant/50">
-                              <button 
-                                onClick={() => setSetting(activityId, 'mode', 'teacher-paced')}
-                                className={`flex-1 text-xs font-bold py-1.5 px-2 rounded-md transition-colors ${(!activitySettings[activityId]?.mode || activitySettings[activityId]?.mode === 'teacher-paced') ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}>
-                                Proyector
-                              </button>
-                              <button 
-                                onClick={() => setSetting(activityId, 'mode', 'student-paced')}
-                                className={`flex-1 text-xs font-bold py-1.5 px-2 rounded-md transition-colors ${activitySettings[activityId]?.mode === 'student-paced' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}>
-                                A tu Ritmo
-                              </button>
-                            </div>
-                          </div>
-                          
-                          <label className="flex items-center gap-2 text-sm text-on-surface-variant cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              className="accent-primary w-4 h-4 cursor-pointer"
-                              checked={!!activitySettings[activityId]?.showAnswers}
-                              onChange={() => toggleSetting(activityId, 'showAnswers')}
-                            />
-                            Mostrar respuestas a estudiantes
-                          </label>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2 w-full mt-2">
-                        <button 
-                          onClick={() => handleHostActivity({ id: activityId, title: activity.title })}
-                          className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full font-label-lg text-label-lg font-bold shadow-md transition-all active:scale-95 ${
-                            isHosted 
-                              ? 'bg-secondary-container text-on-secondary-container hover:bg-[#b38702] hover:text-white' 
-                              : 'bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container'
-                          }`}>
-                          <span className="material-symbols-outlined fill">{isHosted ? 'podium' : 'play_arrow'}</span>
-                          {isHosted ? 'Resume Host' : 'Host'}
-                        </button>
-                        
-                        <button 
-                          onClick={() => navigate(`/teacher/edit/${activityId}`)}
-                          className="flex items-center justify-center w-12 h-12 bg-surface-container-highest text-on-surface rounded-full shadow-md hover:bg-surface-variant transition-colors shrink-0"
-                          title="Editar Actividad"
-                        >
-                          <span className="material-symbols-outlined">edit</span>
-                        </button>
-                        
+              {filteredActivities.length === 0 ? (
+                <div className="bg-surface-container-lowest rounded-2xl p-8 text-center border border-outline-variant">
+                  <span className="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-2">search_off</span>
+                  <p className="text-on-surface-variant font-bold">No se encontraron actividades con "{searchQuery}"</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-game-gap">
+                  {filteredActivities.map(([activityId, activity]) => {
+                    const hostedSessionEntry = Object.entries(activeSessions).find(
+                      ([pin, session]) => session.state && session.state.activityId === activityId
+                    );
+                    const isHosted = !!hostedSessionEntry;
+                    const hostedPin = hostedSessionEntry ? hostedSessionEntry[0] : null;
+                    const isNew = activityId === 'activity_13';
+
+                    return (
+                      <div key={activityId} className={`bg-surface-container-lowest rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.08)] border ${isHosted ? 'border-secondary-container bg-secondary-fixed/5' : isNew ? 'border-emerald-500/50 ring-2 ring-emerald-500/20' : 'border-outline-variant'} flex flex-col justify-between relative overflow-hidden transition-colors`}>
                         {isHosted && (
-                          <button 
-                            onClick={() => handleStopHost(hostedPin)}
-                            className="flex items-center justify-center w-12 h-12 bg-error-container text-on-error-container rounded-full shadow-md hover:bg-error hover:text-on-error transition-colors shrink-0"
-                            title="Apagar Host"
-                          >
-                            <span className="material-symbols-outlined">power_settings_new</span>
-                          </button>
+                          <div className="absolute top-0 right-0 bg-secondary-container text-on-secondary-container text-xs font-bold px-3 py-1 rounded-bl-lg animate-pulse">
+                            LIVE NOW
+                          </div>
                         )}
+                        
+                        <div className="flex-1 mb-4">
+                          <div className="flex items-center justify-between gap-2 mb-2 mt-2">
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-on-surface-variant fill">article</span>
+                              <span className="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">{activity.subject}</span>
+                            </div>
+                            {isNew && (
+                              <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                NUEVA
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-headline-sm-mobile md:text-headline-sm font-headline-sm-mobile md:font-headline-sm font-bold text-primary mb-1">
+                            {activity.title}
+                          </h3>
+                          <p className="text-body-sm font-body-sm text-on-surface-variant mb-2">
+                            {activity.questions?.length || 0} questions • Autogenerated
+                          </p>
+                          
+                          {/* Settings Panel */}
+                          <div className="mt-2 bg-surface-container p-3 rounded-xl border border-outline-variant/30 flex flex-col gap-3">
+                            
+                            {/* Mode Selector */}
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Modo de Juego</span>
+                              <div className="flex bg-surface-container-lowest rounded-lg p-1 border border-outline-variant/50">
+                                <button 
+                                  onClick={() => setSetting(activityId, 'mode', 'teacher-paced')}
+                                  className={`flex-1 text-xs font-bold py-1.5 px-2 rounded-md transition-colors ${(!activitySettings[activityId]?.mode || activitySettings[activityId]?.mode === 'teacher-paced') ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}>
+                                  Proyector
+                                </button>
+                                <button 
+                                  onClick={() => setSetting(activityId, 'mode', 'student-paced')}
+                                  className={`flex-1 text-xs font-bold py-1.5 px-2 rounded-md transition-colors ${activitySettings[activityId]?.mode === 'student-paced' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}>
+                                  A tu Ritmo
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <label className="flex items-center gap-2 text-sm text-on-surface-variant cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="accent-primary w-4 h-4 cursor-pointer"
+                                checked={!!activitySettings[activityId]?.showAnswers}
+                                onChange={() => toggleSetting(activityId, 'showAnswers')}
+                              />
+                              Mostrar respuestas a estudiantes
+                            </label>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 w-full mt-2">
+                          <button 
+                            onClick={() => handleHostActivity({ id: activityId, title: activity.title })}
+                            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full font-label-lg text-label-lg font-bold shadow-md transition-all active:scale-95 ${
+                              isHosted 
+                                ? 'bg-secondary-container text-on-secondary-container hover:bg-[#b38702] hover:text-white' 
+                                : 'bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container'
+                            }`}>
+                            <span className="material-symbols-outlined fill">{isHosted ? 'podium' : 'play_arrow'}</span>
+                            {isHosted ? 'Resume Host' : 'Host'}
+                          </button>
+                          
+                          <button 
+                            onClick={() => navigate(`/teacher/edit/${activityId}`)}
+                            className="flex items-center justify-center w-12 h-12 bg-surface-container-highest text-on-surface rounded-full shadow-md hover:bg-surface-variant transition-colors shrink-0"
+                            title="Editar Actividad"
+                          >
+                            <span className="material-symbols-outlined">edit</span>
+                          </button>
+                          
+                          {isHosted && (
+                            <button 
+                              onClick={() => handleStopHost(hostedPin)}
+                              className="flex items-center justify-center w-12 h-12 bg-error-container text-on-error-container rounded-full shadow-md hover:bg-error hover:text-on-error transition-colors shrink-0"
+                              title="Apagar Host"
+                            >
+                              <span className="material-symbols-outlined">power_settings_new</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </>
         )}

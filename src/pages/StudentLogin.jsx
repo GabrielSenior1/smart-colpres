@@ -63,8 +63,19 @@ export default function StudentLogin() {
   };
 
   return (
-    <div className="bg-pattern animate-slide-bg min-h-screen font-body-md text-on-surface flex flex-col justify-center items-center p-4">
+    <div className="bg-pattern animate-slide-bg min-h-screen font-body-md text-on-surface flex flex-col justify-center items-center p-4 relative">
       
+      {/* Teacher Portal shortcut in top-right */}
+      <div className="absolute top-4 right-4 z-20">
+        <button 
+          onClick={() => navigate('/teacher')} 
+          type="button"
+          className="bg-surface-container-lowest/90 backdrop-blur-sm border border-outline-variant hover:border-primary px-3 py-1.5 rounded-full text-xs font-bold text-primary flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 transition-all">
+          <span className="material-symbols-outlined text-base">school</span>
+          Acceso Docente
+        </button>
+      </div>
+
       {/* HEADER LOGO OR ICON */}
       <div className="mb-8 flex flex-col items-center">
         <div className="h-28 mb-4 mx-auto flex items-center justify-center">
