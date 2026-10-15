@@ -1,0 +1,357 @@
+{
+  "title": "TALLER CALIFICATIVO: ÁLGEBRA 7°",
+  "subject": "Matemáticas - Séptimo",
+  "questions": [
+    {
+      "context": "",
+      "text": "1. En el término −8x³, sus elementos son:",
+      "options": [
+        "Coeficiente: 8, Variable: x, Exponente: −3",
+        "Coeficiente: 3, Variable: x, Exponente: −8",
+        "Coeficiente: −8, Variable: x, Exponente: 3",
+        "Coeficiente: −8, Variable: 3, Exponente: x"
+      ],
+      "correctAnswerIndex": 2,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "2. Analiza el término 14y. ¿Cuáles son sus elementos?",
+      "options": [
+        "Coeficiente: 14, Variable: y, Exponente: 1",
+        "Coeficiente: 14, Variable: y, Exponente: 0",
+        "Coeficiente: 1, Variable: y, Exponente: 14",
+        "Coeficiente: y, Variable: 14, Exponente: 1"
+      ],
+      "correctAnswerIndex": 0,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "3. Determina los elementos del término −m⁴:",
+      "options": [
+        "Coeficiente: 0, Variable: m, Exponente: 4",
+        "Coeficiente: −4, Variable: m, Exponente: 1",
+        "Coeficiente: 1, Variable: m, Exponente: −4",
+        "Coeficiente: −1, Variable: m, Exponente: 4"
+      ],
+      "correctAnswerIndex": 3,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "4. Observa el término algebraico «a». Sus partes correctas son:",
+      "options": [
+        "Coeficiente: 0, Variable: a, Exponente: 0",
+        "Coeficiente: 1, Variable: a, Exponente: 1",
+        "Coeficiente: 1, Variable: a, Exponente: 0",
+        "Coeficiente: a, Variable: 1, Exponente: 1"
+      ],
+      "correctAnswerIndex": 1,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "5. En el término 5z², ¿cuál afirmación es verdadera?",
+      "options": [
+        "La variable es 5 y el exponente es 2.",
+        "El coeficiente es 2 y la variable es z.",
+        "El coeficiente es 5 y el exponente es 2.",
+        "El exponente es z y el coeficiente es 5."
+      ],
+      "correctAnswerIndex": 2,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "6. ¿La expresión 3x² − 5/x + 2 es un polinomio?",
+      "options": [
+        "Sí, porque tiene tres términos.",
+        "No, porque hay una variable (x) en el denominador.",
+        "Sí, porque todos los números son enteros.",
+        "No, porque el primer término tiene un exponente muy alto."
+      ],
+      "correctAnswerIndex": 1,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "7. Analiza la expresión 4y³ − 2y² + 8:",
+      "options": [
+        "Sí es un polinomio, ya que todas las variables tienen exponentes enteros positivos.",
+        "No es un polinomio, porque tiene un número solo (el 8).",
+        "No es un polinomio, porque tiene un coeficiente negativo (−2).",
+        "Sí es un polinomio, pero está incompleto porque le falta la letra x."
+      ],
+      "correctAnswerIndex": 0,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "8. ¿La expresión 7√x + x² cumple con las reglas de un polinomio?",
+      "options": [
+        "Sí, porque es un binomio.",
+        "Sí, la raíz cuadrada no afecta a los polinomios.",
+        "No, porque le falta un término independiente.",
+        "No, porque la variable (x) se encuentra dentro de una raíz."
+      ],
+      "correctAnswerIndex": 3,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "9. Observa la expresión x⁴ − 5x⁻² + 1. Determina su clasificación:",
+      "options": [
+        "Es un polinomio ordenado.",
+        "Es un polinomio porque tiene tres términos.",
+        "No es un polinomio porque posee un exponente negativo (−2).",
+        "No es un polinomio porque el primer término no tiene coeficiente visible."
+      ],
+      "correctAnswerIndex": 2,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "10. Evalúa la siguiente expresión matemática: 6a²b + 3ab − 5",
+      "options": [
+        "No es polinomio porque mezcla dos letras distintas (a y b).",
+        "No es polinomio por tener un término independiente negativo.",
+        "Sí es polinomio, pero está mal escrito.",
+        "Sí es polinomio, es un trinomio válido con exponentes enteros positivos."
+      ],
+      "correctAnswerIndex": 3,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "11. ¿La expresión x³/4 + 2x − 1 es un polinomio válido?",
+      "options": [
+        "No, porque las fracciones están prohibidas en los polinomios.",
+        "Sí, porque el denominador es un número y la variable está arriba con exponente positivo.",
+        "No, porque la variable x está dividiendo al 4.",
+        "Sí, pero solo si multiplicamos todo por 4."
+      ],
+      "correctAnswerIndex": 1,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "12. En el polinomio 3x⁴y² − 5x²y⁶ + y, ¿cuál es el Grado Relativo respecto a la variable \"y\" (GRy)?",
+      "options": [
+        "6",
+        "2",
+        "1",
+        "4"
+      ],
+      "correctAnswerIndex": 0,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "13. Dado el polinomio 7a³b²c⁵ − a⁴b⁴c², determina el Grado Relativo respecto a la variable \"a\" (GRa):",
+      "options": [
+        "7",
+        "3",
+        "4",
+        "5"
+      ],
+      "correctAnswerIndex": 2,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "14. En la expresión −2m⁵n³ + 8m²n⁷ − m⁸n, ¿cuál es el Grado Relativo respecto a \"m\" (GRm)?",
+      "options": [
+        "5",
+        "8",
+        "2",
+        "7"
+      ],
+      "correctAnswerIndex": 1,
+      "timeLimit": 60,
+      "section": "Expresiones Algebraicas"
+    },
+    {
+      "context": "",
+      "text": "15. Calcula el Grado Absoluto (GA) del polinomio 4x³ − 2x⁵ + 7x:",
+      "options": [
+        "3",
+        "9",
+        "7",
+        "5"
+      ],
+      "correctAnswerIndex": 3,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "16. ¿Cuál es el Grado Absoluto (GA) del polinomio 3a²b³ − 5a⁴b² + 8ab?",
+      "options": [
+        "6",
+        "5",
+        "4",
+        "2"
+      ],
+      "correctAnswerIndex": 0,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "17. Determina el Grado Absoluto (GA) del polinomio −m⁵n⁴ + 2m³n⁷ − m²n⁵:",
+      "options": [
+        "9",
+        "7",
+        "10",
+        "8"
+      ],
+      "correctAnswerIndex": 2,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "18. Analiza el polinomio 4x³ − 2x² + 5x − 1. ¿Qué afirmación lo describe mejor?",
+      "options": [
+        "Es un polinomio ordenado, pero incompleto.",
+        "Es un polinomio completo y ordenado de forma descendente.",
+        "Es un polinomio completo, pero desordenado.",
+        "Es un polinomio ordenado de forma ascendente."
+      ],
+      "correctAnswerIndex": 1,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "19. Observa el polinomio x⁴ + 2x² − 3. Su clasificación correcta es:",
+      "options": [
+        "Completo y ordenado.",
+        "Desordenado e incompleto.",
+        "Ordenado en forma descendente, pero incompleto.",
+        "Completo, pero desordenado."
+      ],
+      "correctAnswerIndex": 2,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "20. El polinomio 5x − x³ + 2x² − 8 se caracteriza por ser:",
+      "options": [
+        "Completo (tiene todos los grados desde el 3 hasta el 0), pero está desordenado.",
+        "Incompleto y desordenado.",
+        "Ordenado y completo.",
+        "Incompleto, aunque está ordenado."
+      ],
+      "correctAnswerIndex": 0,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "21. ¿Qué características cumple el polinomio y³ − 5y⁵ + y?",
+      "options": [
+        "Es completo y ordenado.",
+        "Es completo, pero desordenado.",
+        "Es ordenado de forma descendente.",
+        "No es completo (faltan grados 4, 2 y 0) y tampoco está ordenado."
+      ],
+      "correctAnswerIndex": 3,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "22. Analiza el polinomio −7 + 2m − 3m² + m³:",
+      "options": [
+        "Es incompleto y desordenado.",
+        "Es completo, pero ordenado descendentemente.",
+        "Es completo y está ordenado de forma ascendente.",
+        "Es ordenado, pero le falta el término independiente."
+      ],
+      "correctAnswerIndex": 2,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "23. El polinomio a⁵ − 2a⁴ + 3a³ puede clasificarse como:",
+      "options": [
+        "Completo y ordenado.",
+        "Ordenado descendentemente, pero incompleto.",
+        "Incompleto y desordenado.",
+        "Completo, pero desordenado."
+      ],
+      "correctAnswerIndex": 1,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "24. ¿Son semejantes los términos 4x²y y −5x²y?",
+      "options": [
+        "Sí, porque tienen las mismas letras con los mismos exponentes.",
+        "No, porque tienen coeficientes con signos diferentes.",
+        "No, porque el 4 y el 5 son números distintos.",
+        "Sí, porque ambos son términos algebraicos."
+      ],
+      "correctAnswerIndex": 0,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "25. Analiza los términos 3m³n² y 3m²n³. ¿Son semejantes?",
+      "options": [
+        "Sí, porque ambos tienen el coeficiente 3.",
+        "Sí, porque usan las mismas letras (m y n).",
+        "No, porque los exponentes están intercambiados en las letras.",
+        "No, porque a uno de los dos le falta un signo negativo."
+      ],
+      "correctAnswerIndex": 2,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "26. ¿La pareja de términos 7ab² y −ab² es semejante?",
+      "options": [
+        "No, porque el segundo término no tiene número visible.",
+        "No, porque los signos son opuestos.",
+        "Sí, porque la variable 'a' no tiene exponente en ninguno.",
+        "Sí, porque ambos comparten exactamente la parte literal (ab²)."
+      ],
+      "correctAnswerIndex": 3,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    },
+    {
+      "context": "",
+      "text": "27. ¿Son semejantes los términos 8x y 8y?",
+      "options": [
+        "Sí, porque ambos tienen el mismo coeficiente (8).",
+        "No, porque tienen letras (variables) diferentes.",
+        "Sí, porque las letras no tienen exponentes escritos.",
+        "No, porque uno debería ser negativo."
+      ],
+      "correctAnswerIndex": 1,
+      "timeLimit": 60,
+      "section": "Polinomios"
+    }
+  ]
+}

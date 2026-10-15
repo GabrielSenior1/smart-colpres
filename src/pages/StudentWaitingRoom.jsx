@@ -32,12 +32,18 @@ export default function StudentWaitingRoom() {
       }
     });
 
-    // Listen to specific session state
+    // Listen to session state (starts quiz or deleted)
     const stateRef = ref(rtdb, `sessions/${pin}/state`);
     const unsubscribeState = onValue(stateRef, (snapshot) => {
       const state = snapshot.val();
-      if (state && state.status === 'quiz') {
-        navigate('/quiz');
+      if (state) {
+        if (state.status === 'quiz') {
+          navigate('/quiz');
+        }
+      } else {
+        // Session was deleted (host turned off)
+        alert('El profesor ha cerrado la sala.');
+        navigate('/');
       }
     });
 
@@ -65,7 +71,7 @@ export default function StudentWaitingRoom() {
   };
 
   return (
-    <div className="bg-pattern animate-slide-bg min-h-screen overflow-hidden font-body-md text-on-surface flex flex-col relative select-none">
+    <div className="bg-pattern animate-slide-bg min-h-[100dvh] overflow-hidden font-body-md text-on-surface flex flex-col relative select-none">
       
       {/* ALERT BANNER OVERLAY */}
       {isExpelled && (
@@ -95,7 +101,7 @@ export default function StudentWaitingRoom() {
           
           <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center z-10 bg-surface-container-lowest border-primary p-2">
             {studentData?.avatar ? (
-              <img src={`/avatares/${studentData.avatar}.jpg`} alt="Avatar" className="w-full h-full object-contain drop-shadow-md" />
+              <img src={`/avatares/${studentData.avatar}.jpg`} alt="Avatar" className="w-full h-full object-cover mix-blend-multiply rounded-full" />
             ) : (
               <div className="w-full h-full bg-surface-container-low flex items-center justify-center">
                 <span className="material-symbols-outlined text-4xl text-outline">person</span>

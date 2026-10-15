@@ -7,11 +7,8 @@ import { ref, onValue, set } from 'firebase/database';
 // Define the two allowed teacher emails here
 const ALLOWED_EMAILS = ['gabriel.senior.daza@gmail.com', 'rovimartinez@gmail.com'];
 
-// Actividades de prueba
-const ACTIVITIES = [
-  { id: 'activity_1', title: 'Intro to Biology', subject: 'Grade 6 Science', qs: 12 },
-  { id: 'activity_2', title: 'El Sistema Solar', subject: 'Ciencias Naturales - 8vo', qs: 10 }
-];
+// Eliminamos las actividades estáticas
+// const ACTIVITIES = [...]
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
@@ -22,9 +19,37 @@ export default function TeacherDashboard() {
   // Real-time states
   const [activeStudents, setActiveStudents] = useState(0);
   const [activeSessions, setActiveSessions] = useState({}); // { pin: { state, students } }
+  const [activities, setActivities] = useState({}); // Dynamic activities
+  const [reports, setReports] = useState({}); // Historical reports
   
   // Navigation state
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'activeGames', 'classes'
+  
+  // Configuration settings for activities
+  const [activitySettings, setActivitySettings] = useState({});
+
+  // Expanded report for viewing details
+  const [expandedReportPin, setExpandedReportPin] = useState(null);
+
+  const toggleSetting = (activityId, setting) => {
+    setActivitySettings(prev => ({
+      ...prev,
+      [activityId]: {
+        ...prev[activityId],
+        [setting]: !prev[activityId]?.[setting]
+      }
+    }));
+  };
+
+  const setSetting = (activityId, setting, value) => {
+    setActivitySettings(prev => ({
+      ...prev,
+      [activityId]: {
+        ...prev[activityId],
+        [setting]: value
+      }
+    }));
+  };
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -37,11 +62,21 @@ export default function TeacherDashboard() {
     const unsubscribeSessions = onValue(sessionsRef, (snapshot) => {
       if (snapshot.exists()) {
         const sessionsData = snapshot.val();
-        setActiveSessions(sessionsData);
+        const now = Date.now();
+        let cleanedSessions = { ...sessionsData };
         
-        // Calcular total de estudiantes activos sumando en todas las sesiones
+        // Clean up ghost sessions older than 4 hours, or completely broken ones without state
+        Object.entries(sessionsData).forEach(([pin, session]) => {
+          if (!session.state || (session.state.createdAt && (now - session.state.createdAt > 4 * 60 * 60 * 1000))) {
+            set(ref(rtdb, `sessions/${pin}`), null).catch(console.error);
+            delete cleanedSessions[pin];
+          }
+        });
+
+        setActiveSessions(cleanedSessions);
+        
         let totalActiveStudents = 0;
-        Object.values(sessionsData).forEach(session => {
+        Object.values(cleanedSessions).forEach(session => {
           if (session.students) {
             totalActiveStudents += Object.values(session.students).filter(s => s.status !== 'kicked').length;
           }
@@ -53,9 +88,32 @@ export default function TeacherDashboard() {
       }
     });
 
+    // Listen to activities
+    const activitiesRef = ref(rtdb, 'activities');
+    const unsubscribeActivities = onValue(activitiesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setActivities(data);
+      } else {
+        setActivities({});
+      }
+    });
+
+    // Listen to reports
+    const reportsRef = ref(rtdb, 'reports');
+    const unsubscribeReports = onValue(reportsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setReports(snapshot.val());
+      } else {
+        setReports({});
+      }
+    });
+
     return () => {
       unsubscribeAuth();
       unsubscribeSessions();
+      unsubscribeActivities();
+      unsubscribeReports();
     };
   }, []);
 
@@ -100,14 +158,37 @@ export default function TeacherDashboard() {
       let newPin = generatePin();
       
       const newSessionRef = ref(rtdb, `sessions/${newPin}/state`);
+      const sessionMode = activitySettings[activity.id]?.mode || 'teacher-paced';
       await set(newSessionRef, {
         activityId: activity.id,
         activityTitle: activity.title,
-        status: 'waiting',
+        showAnswers: !!activitySettings[activity.id]?.showAnswers,
+        mode: sessionMode,
+        status: sessionMode === 'student-paced' ? 'quiz' : 'waiting',
         createdAt: Date.now()
       });
       
       navigate(`/teacher/live/${newPin}`);
+    }
+  };
+
+  const handleStopHost = async (pin) => {
+    if (window.confirm('¿Estás seguro de que quieres apagar este juego? Todos los estudiantes serán desconectados.')) {
+      try {
+        await set(ref(rtdb, `sessions/${pin}`), null);
+      } catch (e) {
+        console.error("Error stopping host:", e);
+      }
+    }
+  };
+
+  const handleDeleteReport = async (actId, pin) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este reporte del historial? Esta acción no se puede deshacer.')) {
+      try {
+        await set(ref(rtdb, `reports/${actId}/${pin}`), null);
+      } catch (e) {
+        console.error("Error eliminando reporte:", e);
+      }
     }
   };
 
@@ -214,6 +295,12 @@ export default function TeacherDashboard() {
                 <span>Classes</span>
               </a>
             </li>
+            <li>
+              <a onClick={() => setActiveTab('history')} className={navItemClass('history')}>
+                <span className="material-symbols-outlined fill">history</span>
+                <span>Historial</span>
+              </a>
+            </li>
           </ul>
         </div>
         <div className="p-6 border-t border-outline-variant/30 flex flex-col gap-3">
@@ -268,39 +355,94 @@ export default function TeacherDashboard() {
                 <a onClick={() => setActiveTab('classes')} className="text-primary font-label-lg text-label-lg hover:underline flex items-center gap-1 cursor-pointer">View All <span className="material-symbols-outlined">arrow_forward</span></a>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-game-gap">
-                {ACTIVITIES.map((activity) => {
-                  const isHosting = Object.values(activeSessions).some(
-                    session => session.state && session.state.activityId === activity.id
+                {Object.entries(activities).map(([activityId, activity]) => {
+                  const hostedSessionEntry = Object.entries(activeSessions).find(
+                    ([pin, session]) => session.state && session.state.activityId === activityId
                   );
+                  const isHosted = !!hostedSessionEntry;
+                  const hostedPin = hostedSessionEntry ? hostedSessionEntry[0] : null;
 
                   return (
-                    <div key={activity.id} className={`bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border ${isHosting ? 'border-primary border-2' : 'border-outline-variant/30'} overflow-hidden group hover:shadow-lg transition-all`}>
-                      <div className="h-32 bg-primary-fixed-dim relative flex items-center justify-center overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                        <span className="absolute bottom-2 right-2 bg-background text-on-background text-xs px-2 py-1 rounded-full font-bold">{activity.qs} Qs</span>
-                        {isHosting && (
-                          <span className="absolute top-2 left-2 bg-primary text-on-primary text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                            Live Now
-                          </span>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="text-label-lg font-label-lg text-on-surface mb-1 line-clamp-1">{activity.title}</h3>
-                        <p className="text-sm text-on-surface-variant mb-4">{activity.subject}</p>
-                        <div className="flex gap-2">
-                          <button className="flex-1 bg-surface-container text-on-surface py-2 rounded-lg text-sm font-bold hover:bg-surface-container-highest transition-colors">Edit</button>
-                          
-                          <button 
-                            onClick={() => handleHostActivity(activity)} 
-                            className={`flex-1 py-2 rounded-lg text-sm font-bold btn-3d text-white transition-colors ${
-                              isHosting ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'
-                            }`}
-                          >
-                            {isHosting ? 'Resume Host' : 'Host'}
-                          </button>
-                          
+                    <div key={activityId} className={`bg-surface-container-lowest rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.08)] border ${isHosted ? 'border-secondary-container bg-secondary-fixed/5' : 'border-outline-variant'} flex flex-col justify-between relative overflow-hidden transition-colors`}>
+                      {isHosted && (
+                        <div className="absolute top-0 right-0 bg-secondary-container text-on-secondary-container text-xs font-bold px-3 py-1 rounded-bl-lg animate-pulse">
+                          LIVE NOW
                         </div>
+                      )}
+                      
+                      <div className="flex-1 mb-4">
+                        <div className="flex items-center gap-2 mb-2 mt-2">
+                          <span className="material-symbols-outlined text-on-surface-variant fill">article</span>
+                          <span className="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">{activity.subject}</span>
+                        </div>
+                        <h3 className="text-headline-sm-mobile md:text-headline-sm font-headline-sm-mobile md:font-headline-sm font-bold text-primary mb-1">
+                          {activity.title}
+                        </h3>
+                        <p className="text-body-sm font-body-sm text-on-surface-variant mb-2">
+                          {activity.questions?.length || 0} questions • Autogenerated
+                        </p>
+                        
+                        {/* Settings Panel */}
+                        <div className="mt-2 bg-surface-container p-3 rounded-xl border border-outline-variant/30 flex flex-col gap-3">
+                          
+                          {/* Mode Selector */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Modo de Juego</span>
+                            <div className="flex bg-surface-container-lowest rounded-lg p-1 border border-outline-variant/50">
+                              <button 
+                                onClick={() => setSetting(activityId, 'mode', 'teacher-paced')}
+                                className={`flex-1 text-xs font-bold py-1.5 px-2 rounded-md transition-colors ${(!activitySettings[activityId]?.mode || activitySettings[activityId]?.mode === 'teacher-paced') ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}>
+                                Proyector
+                              </button>
+                              <button 
+                                onClick={() => setSetting(activityId, 'mode', 'student-paced')}
+                                className={`flex-1 text-xs font-bold py-1.5 px-2 rounded-md transition-colors ${activitySettings[activityId]?.mode === 'student-paced' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}>
+                                A tu Ritmo
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <label className="flex items-center gap-2 text-sm text-on-surface-variant cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              className="accent-primary w-4 h-4 cursor-pointer"
+                              checked={!!activitySettings[activityId]?.showAnswers}
+                              onChange={() => toggleSetting(activityId, 'showAnswers')}
+                            />
+                            Mostrar respuestas a estudiantes
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2 w-full mt-2">
+                        <button 
+                          onClick={() => handleHostActivity({ id: activityId, title: activity.title })}
+                          className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full font-label-lg text-label-lg font-bold shadow-md transition-all active:scale-95 ${
+                            isHosted 
+                              ? 'bg-secondary-container text-on-secondary-container hover:bg-[#b38702] hover:text-white' 
+                              : 'bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container'
+                          }`}>
+                          <span className="material-symbols-outlined fill">{isHosted ? 'podium' : 'play_arrow'}</span>
+                          {isHosted ? 'Resume Host' : 'Host'}
+                        </button>
+                        
+                        <button 
+                          onClick={() => navigate(`/teacher/edit/${activityId}`)}
+                          className="flex items-center justify-center w-12 h-12 bg-surface-container-highest text-on-surface rounded-full shadow-md hover:bg-surface-variant transition-colors shrink-0"
+                          title="Editar Actividad"
+                        >
+                          <span className="material-symbols-outlined">edit</span>
+                        </button>
+                        
+                        {isHosted && (
+                          <button 
+                            onClick={() => handleStopHost(hostedPin)}
+                            className="flex items-center justify-center w-12 h-12 bg-error-container text-on-error-container rounded-full shadow-md hover:bg-error hover:text-on-error transition-colors shrink-0"
+                            title="Apagar Host"
+                          >
+                            <span className="material-symbols-outlined">power_settings_new</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -326,9 +468,14 @@ export default function TeacherDashboard() {
                       <h3 className="font-bold text-primary">{session.state?.activityTitle || 'Quiz Session'}</h3>
                       <p className="text-sm text-on-surface-variant">PIN: {pin}</p>
                     </div>
-                    <button onClick={() => navigate(`/teacher/live/${pin}`)} className="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-bold btn-3d">
-                      Join
-                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={() => navigate(`/teacher/live/${pin}`)} className="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-bold btn-3d hover:brightness-110">
+                        Entrar (Join)
+                      </button>
+                      <button onClick={() => handleStopHost(pin)} className="bg-error-container text-on-error-container px-4 py-2 rounded-lg text-sm font-bold shadow-sm border border-error/20 hover:bg-error hover:text-on-error transition-colors">
+                        Apagar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -341,6 +488,146 @@ export default function TeacherDashboard() {
             <span className="material-symbols-outlined text-6xl text-primary/30 mb-4">group</span>
             <h2 className="text-headline-md font-headline-md text-primary mb-2">My Classes</h2>
             <p className="text-on-surface-variant">Here you can manage your students and view their overall progress.</p>
+          </section>
+        )}
+
+        {activeTab === 'history' && (
+          <section className="flex flex-col h-full">
+            <div className="flex items-center gap-4 mb-6">
+              <span className="material-symbols-outlined text-primary text-4xl">history</span>
+              <div>
+                <h2 className="text-headline-md font-bold text-primary leading-tight">Historial de Actividades</h2>
+                <p className="text-on-surface-variant">Revisa los resultados y reportes de juegos anteriores.</p>
+              </div>
+            </div>
+
+            {Object.keys(reports).length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-surface-container-lowest rounded-3xl border border-outline-variant">
+                <span className="material-symbols-outlined text-6xl text-primary/30 mb-4">inbox</span>
+                <p className="text-on-surface-variant font-bold text-lg">Aún no hay reportes guardados.</p>
+                <p className="text-on-surface-variant text-sm mt-2">Los reportes aparecerán aquí cuando finalices un quiz y hagas clic en "Guardar Reporte".</p>
+              </div>
+            ) : (
+              <div className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="bg-surface-container-low border-b border-outline-variant">
+                        <th className="p-4 text-label-lg font-bold text-on-surface-variant">Día / Hora</th>
+                        <th className="p-4 text-label-lg font-bold text-on-surface-variant">Actividad</th>
+                        <th className="p-4 text-label-lg font-bold text-on-surface-variant">Grupo (Cursos)</th>
+                        <th className="p-4 text-label-lg font-bold text-on-surface-variant">Estudiantes</th>
+                        <th className="p-4 text-label-lg font-bold text-on-surface-variant text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-body-md font-body-md">
+                      {Object.entries(reports)
+                        .flatMap(([actId, activityReports]) => {
+                          return Object.entries(activityReports).map(([pin, report]) => ({ actId, pin, report }));
+                        })
+                        .sort((a, b) => b.report.date - a.report.date)
+                        .map(({ actId, pin, report }) => {
+                          const date = new Date(report.date).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+                          // Obtener los cursos únicos
+                          const courses = report.students ? [...new Set(report.students.map(s => s.course))] : [];
+                          const coursesStr = courses.length > 0 ? courses.join(', ') : 'N/A';
+                          const studentsCount = report.students ? report.students.length : 0;
+                          
+                          return (
+                            <React.Fragment key={`${actId}-${pin}`}>
+                              <tr className="border-b border-outline-variant hover:bg-surface-container-highest transition-colors">
+                                <td className="p-4 text-on-surface-variant font-bold">{date}</td>
+                                <td className="p-4 text-primary font-bold">{report.activityTitle}</td>
+                                <td className="p-4 text-on-surface-variant">
+                                  <span className="bg-surface-container-highest px-3 py-1 rounded-full text-xs font-bold border border-outline-variant">
+                                    {coursesStr}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-sm">groups</span>
+                                    <span className="font-bold text-on-surface">{studentsCount} participantes</span>
+                                  </div>
+                                </td>
+                                <td className="p-4 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button 
+                                      onClick={() => setExpandedReportPin(expandedReportPin === pin ? null : pin)}
+                                      className="w-10 h-10 flex items-center justify-center rounded-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-colors"
+                                      title="Ver Calificaciones"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">{expandedReportPin === pin ? 'expand_less' : 'visibility'}</span>
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteReport(actId, pin)}
+                                      className="w-10 h-10 flex items-center justify-center rounded-full bg-error-container text-on-error-container hover:bg-error hover:text-on-error transition-colors"
+                                      title="Eliminar Reporte"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">delete</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                              {expandedReportPin === pin && (
+                                <tr className="bg-surface-container-lowest">
+                                  <td colSpan="5" className="p-0">
+                                    <div className="p-4 border-b border-outline-variant bg-surface-container-highest/20">
+                                      <h4 className="font-bold text-primary mb-3">Calificaciones de Estudiantes</h4>
+                                      <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse bg-surface-container-lowest rounded-xl shadow-sm">
+                                          <thead>
+                                            <tr className="border-b border-outline-variant bg-surface-container-low">
+                                              <th className="p-3 text-label-sm font-bold text-on-surface-variant">Estudiante</th>
+                                              <th className="p-3 text-label-sm font-bold text-on-surface-variant">Curso</th>
+                                              <th className="p-3 text-label-sm font-bold text-on-surface-variant text-center">Aciertos</th>
+                                              <th className="p-3 text-label-sm font-bold text-on-surface-variant text-center">Nota Gral</th>
+                                              {report.students && report.students.length > 0 && report.students[0].sectionScores && Object.keys(report.students[0].sectionScores).map(sec => (
+                                                <th key={sec} className="p-3 text-label-sm font-bold text-on-surface-variant text-center capitalize">Nota {sec}</th>
+                                              ))}
+                                              <th className="p-3 text-label-sm font-bold text-on-surface-variant">Desempeño</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {report.students && report.students.length > 0 ? (
+                                              report.students.map((student, idx) => (
+                                                <tr key={idx} className="border-b border-outline-variant/30 hover:bg-surface-container-lowest transition-colors">
+                                                  <td className="p-3 font-bold text-on-surface">{student.name}</td>
+                                                  <td className="p-3 text-on-surface-variant">{student.course || 'N/A'}</td>
+                                                  <td className="p-3 text-center text-on-surface-variant">{student.correctCount ?? '-'}</td>
+                                                  <td className="p-3 font-bold text-primary text-center text-lg">{student.score?.toFixed(1) || '0.0'}</td>
+                                                  {student.sectionScores && Object.values(student.sectionScores).map((secScore, i) => (
+                                                    <td key={i} className="p-3 font-bold text-primary text-center">
+                                                      {secScore.toFixed(1)}
+                                                    </td>
+                                                  ))}
+                                                  <td className="p-3 text-on-surface-variant">
+                                                    <span className="bg-surface-container px-2 py-1 rounded-lg text-xs font-bold border border-outline-variant">
+                                                      {student.classification || '-'}
+                                                    </span>
+                                                  </td>
+                                                </tr>
+                                              ))
+                                            ) : (
+                                              <tr>
+                                                <td colSpan="5" className="p-4 text-center text-on-surface-variant text-sm">No hay datos de estudiantes.</td>
+                                              </tr>
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </section>
         )}
       </main>

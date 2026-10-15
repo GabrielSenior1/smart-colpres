@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import TeacherDashboard from './pages/TeacherDashboard'
+import EditActivity from './pages/EditActivity'
 import TeacherLive from './pages/TeacherLive'
 import StudentLogin from './pages/StudentLogin'
 import StudentWaitingRoom from './pages/StudentWaitingRoom'
@@ -15,9 +16,11 @@ function App() {
         <Route path="/" element={<StudentLogin />} />
         <Route path="/waiting-room" element={<StudentWaitingRoom />} />
         <Route path="/quiz" element={<StudentQuiz />} />
+        <Route path="/quiz/:pin" element={<StudentQuiz />} />
         
         {/* Teacher Routes */}
         <Route path="/teacher" element={<TeacherDashboard />} />
+        <Route path="/teacher/edit/:activityId" element={<EditActivity />} />
         <Route path="/teacher/live/:pin" element={<TeacherLive />} />
         
         {/* Shared Routes */}

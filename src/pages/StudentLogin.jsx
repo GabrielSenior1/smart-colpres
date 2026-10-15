@@ -147,8 +147,8 @@ export default function StudentLogin() {
             
             {/* Live Preview */}
             <div className="flex justify-center mb-6">
-              <div className="w-32 h-32 border-4 border-primary rounded-full shadow-lg flex items-center justify-center overflow-hidden bg-surface-container-lowest">
-                <img src={`/avatares/${avatarId}.jpg`} alt="Avatar Preview" className="w-full h-full object-contain p-2 drop-shadow-md hover:scale-105 transition-transform" />
+              <div className="w-32 h-32 border-4 border-primary rounded-full shadow-lg flex items-center justify-center bg-surface-container-lowest">
+                <img src={`/avatares/${avatarId}.jpg`} alt="Avatar Preview" className="w-full h-full rounded-full object-cover mix-blend-multiply p-1 drop-shadow-md hover:scale-105 transition-transform" style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }} />
               </div>
             </div>
 
@@ -159,9 +159,9 @@ export default function StudentLogin() {
                   key={id}
                   type="button" 
                   onClick={() => setAvatarId(id)}
-                  className={`w-16 h-16 rounded-full overflow-hidden border-2 transition-all p-1 flex items-center justify-center bg-surface-container-lowest ${avatarId === id ? 'border-primary ring-4 ring-primary-fixed scale-110 shadow-lg' : 'border-outline-variant opacity-70 hover:opacity-100 hover:scale-105'}`}
+                  className={`w-16 h-16 rounded-full border-2 transition-all p-0.5 flex items-center justify-center bg-surface-container-lowest ${avatarId === id ? 'border-primary ring-4 ring-primary-fixed scale-110 shadow-lg' : 'border-outline-variant opacity-70 hover:opacity-100 hover:scale-105'}`}
                 >
-                  <img src={`/avatares/${id}.jpg`} alt={`Avatar ${id}`} className="w-full h-full object-contain drop-shadow-sm" />
+                  <img src={`/avatares/${id}.jpg`} alt={`Avatar ${id}`} className="w-full h-full rounded-full object-cover mix-blend-multiply drop-shadow-sm" style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }} />
                 </button>
               ))}
             </div>
